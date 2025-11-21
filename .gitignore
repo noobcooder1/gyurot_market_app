@@ -1,0 +1,131 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.keystore
+*.jks
+
+# Firebase and API keys
+google-services.json
+GoogleService-Info.plist
+firebase.json
+
+# Local environment configuration
+local.properties
+gradle.properties
+
+# iOS specific
+ios/Pods/
+ios/Podfile.lock
+ios/.symlinks/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter-Debug.xcconfig
+ios/Flutter/Flutter-Release.xcconfig
+
+# macOS specific
+macos/Pods/
+macos/Podfile.lock
+macos/Flutter/Flutter-Debug.xcconfig
+macos/Flutter/Flutter-Release.xcconfig
+
+# Linux specific
+linux/flutter/ephemeral/
+
+# Web specific
+web/flutter_service_worker.js
+
+# Windows specific
+windows/flutter/ephemeral/
+
+# Generated files
+*.g.dart
+*.config.dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/package_config.json
+
+# Test coverage
+coverage/
+.coverage
+.coveragerc
+
+# IDE settings
+.idea/
+*.iml
+*.iws
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build outputs
+build/
+dist/
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+

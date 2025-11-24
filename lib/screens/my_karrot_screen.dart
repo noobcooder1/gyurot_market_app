@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'settings_screen.dart';
+import 'profile_screen.dart';
+import 'history_screen.dart';
 
 class MyKarrotScreen extends StatelessWidget {
   const MyKarrotScreen({super.key});
@@ -9,7 +12,15 @@ class MyKarrotScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('나의 당근'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            icon: const Icon(Icons.settings),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -43,7 +54,14 @@ class MyKarrotScreen extends StatelessWidget {
                     ),
                   ),
                   OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+                    },
                     child: const Text('프로필 보기'),
                   ),
                 ],
@@ -51,24 +69,29 @@ class MyKarrotScreen extends StatelessWidget {
             ),
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
             // Menu Items
-            _buildMenuItem(Icons.receipt_long, '판매내역'),
-            _buildMenuItem(Icons.shopping_bag_outlined, '구매내역'),
-            _buildMenuItem(Icons.favorite_border, '관심목록'),
+            _buildMenuItem(context, Icons.receipt_long, '판매내역'),
+            _buildMenuItem(context, Icons.shopping_bag_outlined, '구매내역'),
+            _buildMenuItem(context, Icons.favorite_border, '관심목록'),
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
-            _buildMenuItem(Icons.location_on_outlined, '동네 인증하기'),
-            _buildMenuItem(Icons.settings_outlined, '키워드 알림'),
-            _buildMenuItem(Icons.tune, '모아보기 설정'),
+            _buildMenuItem(context, Icons.location_on_outlined, '동네 인증하기'),
+            _buildMenuItem(context, Icons.settings_outlined, '키워드 알림'),
+            _buildMenuItem(context, Icons.tune, '모아보기 설정'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title) {
+  Widget _buildMenuItem(BuildContext context, IconData icon, String title) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(title),
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => HistoryScreen(title: title)),
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chat_detail_screen.dart';
+import 'notification_screen.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -10,8 +11,40 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('채팅'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.qr_code)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('QR 코드 스캔'),
+                  content: const SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: Icon(Icons.qr_code_scanner, size: 100),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            icon: const Icon(Icons.qr_code),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_none),
+          ),
         ],
       ),
       body: ListView.separated(

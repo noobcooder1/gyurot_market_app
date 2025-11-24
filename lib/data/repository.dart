@@ -65,14 +65,13 @@ class Repository {
     if (!chatMessages.containsKey(userId)) {
       chatMessages[userId] = [];
     }
-    chatMessages[userId]!.add({
-      'isMe': true,
-      'text': text,
-      'time': '방금',
-    });
+    chatMessages[userId]!.add({'isMe': true, 'text': text, 'time': '방금'});
   }
 
   List<Map<String, dynamic>> getMessages(String userId) {
     return chatMessages[userId] ?? [];
   }
+
+  // Recent Searches
+  List<String> recentSearches = [];
 }

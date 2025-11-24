@@ -1,96 +1,112 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/user_profile.dart';
+import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isEditing = false;
-  late TextEditingController _nameController;
-  late TextEditingController _idController;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: '당근이');
-    _idController = TextEditingController(text: '#123456');
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _idController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final userProfile = context.watch<UserProfileProvider>().userProfile;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('프로필'),
         actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.share))],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, size: 60, color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              if (_isEditing) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: TextField(
-                    controller: _nameController,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // Background Image
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  color: Colors.grey[300],
+                  child: userProfile.backgroundImage != null
+                      ? Image.file(
+                          File(userProfile.backgroundImage!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                // Profile Image
+                Positioned(
+                  bottom: -50,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: 48,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: userProfile.profileImage != null
+                          ? FileImage(File(userProfile.profileImage!))
+                          : null,
+                      child: userProfile.profileImage == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            )
+                          : null,
                     ),
-                    decoration: const InputDecoration(hintText: '이름'),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: TextField(
-                    controller: _idController,
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(hintText: 'ID'),
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  _nameController.text,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(_idController.text),
               ],
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isEditing = !_isEditing;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7E36),
+            ),
+            const SizedBox(height: 60),
+            Text(
+              userProfile.name,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(userProfile.id, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Colors.grey),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '프로필 수정',
+                    style: TextStyle(color: Colors.black),
+                  ),
                 ),
-                child: Text(_isEditing ? '저장 완료' : '프로필 수정'),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
+            ListTile(
+              title: const Text('태어난 연도'),
+              trailing: Text(userProfile.birthYear ?? '미입력'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              title: const Text('전화번호'),
+              trailing: Text(userProfile.phoneNumber ?? '미입력'),
+            ),
+            const Divider(height: 1),
+          ],
         ),
       ),
     );

@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/user_profile.dart';
 import 'settings_screen.dart';
 import 'profile_screen.dart';
 import 'history_screen.dart';
@@ -8,6 +11,8 @@ class MyKarrotScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProfile = context.watch<UserProfileProvider>().userProfile;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('나의 당근'),
@@ -31,25 +36,30 @@ class MyKarrotScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.grey,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: userProfile.profileImage != null
+                        ? FileImage(File(userProfile.profileImage!))
+                        : null,
+                    child: userProfile.profileImage == null
+                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                        : null,
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '당근이',
-                          style: TextStyle(
+                          userProfile.name,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text('#123456'),
+                        const SizedBox(height: 4),
+                        Text(userProfile.id),
                       ],
                     ),
                   ),

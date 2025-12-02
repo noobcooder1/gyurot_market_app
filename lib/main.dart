@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'screens/main_screen.dart';
 import 'theme/theme.dart';
 import 'models/user_profile.dart';
+import 'src/root.dart';
+import 'screens/start_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(
@@ -18,10 +21,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Gyurot Market',
       theme: MyTheme.theme,
-      home: const MainScreen(),
+      initialRoute: '/start',
+      getPages: [
+        GetPage(name: '/start', page: () => const StartScreen()),
+        GetPage(name: '/login', page: () => const LoginScreen()),
+        GetPage(name: '/home', page: () => const Root()),
+      ],
       debugShowCheckedModeBanner: false,
     );
   }

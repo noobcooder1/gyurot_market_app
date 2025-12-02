@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-import '../screens/detail_screen.dart';
 
 class ProductItem extends StatelessWidget {
   final Product product;
@@ -10,14 +9,7 @@ class ProductItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailScreen(product: product),
-          ),
-        );
-      },
+      onTap: () {},
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: const BoxDecoration(
@@ -42,7 +34,10 @@ class ProductItem extends StatelessWidget {
                       width: 100,
                       height: 100,
                       color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      child: const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
                     );
                   },
                 ),
@@ -66,10 +61,7 @@ class ProductItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${product.location} • ${product.time}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -84,11 +76,18 @@ class ProductItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       if (product.likes > 0) ...[
-                        const Icon(Icons.favorite_border, size: 16, color: Colors.grey),
+                        const Icon(
+                          Icons.favorite_border,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           '${product.likes}',
-                          style: const TextStyle(fontSize: 13, color: Colors.black54),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
                         ),
                       ],
                     ],

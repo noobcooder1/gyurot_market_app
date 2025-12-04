@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../screens/product_detail_screen.dart';
 
 class ProductItem extends StatelessWidget {
   final Product product;
@@ -8,52 +9,71 @@ class ProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(product: product),
+          ),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.all(16.0),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: Colors.grey, width: 0.3)),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          border: Border(
+            bottom: BorderSide(
+              color: isDark ? Colors.grey[800]! : Colors.grey,
+              width: 0.3,
+            ),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Hero(
-                tag: product.title,
-                child: Image.network(
-                  product.imageUrl,
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    );
-                  },
+            Expanded(
+              flex: 2,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Hero(
+                  tag: product.title,
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Image.network(
+                      product.imageUrl,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 16),
             // Details
             Expanded(
+              flex: 5,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -66,9 +86,10 @@ class ProductItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     product.price,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -86,7 +107,7 @@ class ProductItem extends StatelessWidget {
                           '${product.likes}',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Colors.black54,
+                            color: Colors.grey,
                           ),
                         ),
                       ],

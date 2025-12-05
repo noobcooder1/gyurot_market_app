@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -38,12 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: SvgPicture.asset(
-            'assets/svg/icons/back.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-          ),
+          icon: Icon(Icons.arrow_back_ios_new, color: iconColor),
         ),
         title: TextField(
           controller: _searchController,
@@ -79,12 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 _searchController.clear();
                 setState(() {});
               },
-              icon: SvgPicture.asset(
-                'assets/svg/icons/close.svg',
-                width: 20,
-                height: 20,
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              ),
+              icon: Icon(Icons.close, color: iconColor, size: 20),
             ),
         ],
       ),

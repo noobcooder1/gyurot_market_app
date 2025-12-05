@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -81,12 +80,7 @@ class _NotificationScreenState extends State<NotificationScreen>
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: SvgPicture.asset(
-            'assets/svg/icons/back.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-          ),
+          icon: Icon(Icons.arrow_back_ios_new, color: iconColor),
         ),
         title: const Text('알림'),
         bottom: TabBar(

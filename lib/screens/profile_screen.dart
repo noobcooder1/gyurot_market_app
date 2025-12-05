@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import '../models/user_profile.dart';
 import 'menu_screen.dart';
+import 'profile_edit_screen.dart';
+import 'sales_history_screen.dart';
+import 'purchase_history_screen.dart';
+import 'favorite_products_screen.dart';
+import 'faq_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -52,9 +58,21 @@ class ProfileScreen extends StatelessWidget {
               context,
               '나의 거래',
               [
-                {'icon': Icons.receipt_long, 'title': '판매내역'},
-                {'icon': Icons.shopping_bag_outlined, 'title': '구매내역'},
-                {'icon': Icons.favorite_border, 'title': '관심목록'},
+                {
+                  'icon': Icons.receipt_long,
+                  'title': '판매내역',
+                  'screen': const SalesHistoryScreen(),
+                },
+                {
+                  'icon': Icons.shopping_bag_outlined,
+                  'title': '구매내역',
+                  'screen': const PurchaseHistoryScreen(),
+                },
+                {
+                  'icon': Icons.favorite_border,
+                  'title': '관심목록',
+                  'screen': const FavoriteProductsScreen(),
+                },
               ],
               isDark,
               cardColor,
@@ -64,9 +82,21 @@ class ProfileScreen extends StatelessWidget {
               context,
               '나의 활동',
               [
-                {'icon': Icons.article_outlined, 'title': '동네생활 글'},
-                {'icon': Icons.comment_outlined, 'title': '동네생활 댓글'},
-                {'icon': Icons.star_border, 'title': '받은 매너 평가'},
+                {
+                  'icon': Icons.article_outlined,
+                  'title': '동네생활 글',
+                  'action': 'neighborhood_posts',
+                },
+                {
+                  'icon': Icons.comment_outlined,
+                  'title': '동네생활 댓글',
+                  'action': 'comments',
+                },
+                {
+                  'icon': Icons.star_border,
+                  'title': '받은 매너 평가',
+                  'action': 'manner',
+                },
               ],
               isDark,
               cardColor,
@@ -76,9 +106,21 @@ class ProfileScreen extends StatelessWidget {
               context,
               '기타',
               [
-                {'icon': Icons.help_outline, 'title': '자주 묻는 질문'},
-                {'icon': Icons.headset_mic_outlined, 'title': '고객센터'},
-                {'icon': Icons.info_outline, 'title': '앱 정보'},
+                {
+                  'icon': Icons.help_outline,
+                  'title': '자주 묻는 질문',
+                  'screen': const FaqScreen(),
+                },
+                {
+                  'icon': Icons.headset_mic_outlined,
+                  'title': '고객센터',
+                  'action': 'customer_service',
+                },
+                {
+                  'icon': Icons.info_outline,
+                  'title': '앱 정보',
+                  'action': 'app_info',
+                },
               ],
               isDark,
               cardColor,
@@ -140,9 +182,12 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   OutlinedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(
+                      Navigator.push(
                         context,
-                      ).showSnackBar(const SnackBar(content: Text('프로필 수정')));
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileEditScreen(),
+                        ),
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: textColor,
@@ -234,9 +279,15 @@ class ProfileScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${item['title']}')));
+        if (item['screen'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => item['screen'] as Widget),
+          );
+        } else {
+          // action 타입인 경우 스낵바 표시
+          Get.snackbar('안내', '${item['title']} 기능을 준비 중입니다');
+        }
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

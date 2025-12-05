@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'neighborhood_post_detail_screen.dart';
 import 'neighborhood_write_screen.dart';
 
@@ -31,12 +30,7 @@ class NeighborhoodScreen extends StatelessWidget {
                 context,
               ).showSnackBar(const SnackBar(content: Text('검색 기능')));
             },
-            icon: SvgPicture.asset(
-              'assets/svg/icons/search.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-            ),
+            icon: Icon(Icons.search, color: iconColor),
             tooltip: '검색',
           ),
           IconButton(
@@ -45,12 +39,7 @@ class NeighborhoodScreen extends StatelessWidget {
                 context,
               ).showSnackBar(const SnackBar(content: Text('알림 기능')));
             },
-            icon: SvgPicture.asset(
-              'assets/svg/icons/bell.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-            ),
+            icon: Icon(Icons.notifications_outlined, color: iconColor),
             tooltip: '알림',
           ),
         ],

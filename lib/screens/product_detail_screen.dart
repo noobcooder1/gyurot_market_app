@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import 'package:get/get.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -138,7 +139,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '판매자',
+                      widget.product.sellerName,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -194,14 +195,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           // 카테고리 및 시간
           Text(
-            '디지털기기 · ${widget.product.time}',
+            '${widget.product.category ?? '기타'} · ${widget.product.time}',
             style: TextStyle(fontSize: 13, color: Colors.grey[500]),
           ),
           const SizedBox(height: 16),
 
           // 상품 설명
           Text(
-            '상품 상태가 좋습니다.\n직거래 환영합니다.\n가격 네고 가능합니다.',
+            widget.product.description ??
+                '상품 상태가 좋습니다.\n직거래 환영합니다.\n가격 네고 가능합니다.',
             style: TextStyle(
               fontSize: 15,
               height: 1.6,
@@ -407,6 +409,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _showMoreOptions(BuildContext context) {
+    final bool isMyPost = widget.product.userId == currentUserId;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -426,43 +430,126 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('게시글 수정'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('게시글 수정')));
-                },
+              if (isMyPost) ...[
+                // 내 게시글인 경우
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('게시글 수정'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('알림', '게시글 수정 화면으로 이동합니다');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.refresh),
+                  title: const Text('끌어올리기'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('완료', '게시글이 끌어올려졌습니다');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.visibility_off_outlined),
+                  title: const Text('숨기기'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('완료', '게시글이 숨겨졌습니다');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('삭제', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showDeleteConfirmDialog(context);
+                  },
+                ),
+              ] else ...[
+                // 다른 사람 게시글인 경우
+                ListTile(
+                  leading: const Icon(Icons.share_outlined),
+                  title: const Text('공유하기'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('공유', '공유 기능이 실행됩니다');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.visibility_off_outlined),
+                  title: const Text('이 판매자의 글 숨기기'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('완료', '이 판매자의 게시글이 숨겨집니다');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.flag_outlined, color: Colors.red),
+                  title: const Text(
+                    '신고하기',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showReportDialog(context);
+                  },
+                ),
+              ],
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    final reasons = [
+      '광고성 콘텐츠예요',
+      '거래 금지 물품이에요',
+      '사기인 것 같아요',
+      '전문 판매업자 같아요',
+      '다른 문제가 있어요',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: double.infinity,
+                alignment: Alignment.center,
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.refresh),
-                title: const Text('끌어올리기'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('게시글이 끌어올려졌습니다')),
-                  );
-                },
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '신고 사유를 선택해주세요',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.visibility_off_outlined),
-                title: const Text('숨기기'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('게시글이 숨겨졌습니다')));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('삭제', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteConfirmDialog(context);
-                },
+              ...reasons.map(
+                (reason) => ListTile(
+                  title: Text(reason),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.snackbar('신고 접수', '신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+                  },
+                ),
               ),
               const SizedBox(height: 8),
             ],

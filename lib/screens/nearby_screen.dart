@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class NearbyScreen extends StatelessWidget {
   const NearbyScreen({super.key});
@@ -32,12 +31,7 @@ class NearbyScreen extends StatelessWidget {
                 context,
               ).showSnackBar(const SnackBar(content: Text('검색 기능')));
             },
-            icon: SvgPicture.asset(
-              'assets/svg/icons/search.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-            ),
+            icon: Icon(Icons.search, color: iconColor),
             tooltip: '검색',
           ),
         ],
@@ -74,15 +68,7 @@ class NearbyScreen extends StatelessWidget {
       color: cardColor,
       child: Row(
         children: [
-          SvgPicture.asset(
-            'assets/svg/icons/want_location_marker.svg',
-            width: 20,
-            height: 20,
-            colorFilter: const ColorFilter.mode(
-              Color(0xFFFF6F0F),
-              BlendMode.srcIn,
-            ),
-          ),
+          Icon(Icons.location_on, size: 20, color: const Color(0xFFFF6F0F)),
           const SizedBox(width: 8),
           Text(
             '아라동 근처',

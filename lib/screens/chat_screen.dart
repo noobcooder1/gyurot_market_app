@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'chat_detail_screen.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -106,9 +107,10 @@ class ChatScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
+        Navigator.push(
           context,
-        ).showSnackBar(SnackBar(content: Text('${chat['name']}님과의 채팅')));
+          MaterialPageRoute(builder: (context) => ChatDetailScreen(chat: chat)),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),

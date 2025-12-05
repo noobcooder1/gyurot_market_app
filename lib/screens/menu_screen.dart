@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../src/common/theme_controller.dart';
+import 'product_write_screen.dart';
+import 'recent_products_screen.dart';
+import 'favorite_products_screen.dart';
+import 'settings_screen.dart';
+import 'notice_screen.dart';
+import 'category_products_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -44,9 +50,12 @@ class MenuScreen extends StatelessWidget {
             title: '내 물건 팔기',
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('내 물건 팔기 화면으로 이동')));
+                MaterialPageRoute(
+                  builder: (context) => const ProductWriteScreen(),
+                ),
+              );
             },
           ),
           const Divider(height: 1),
@@ -66,9 +75,12 @@ class MenuScreen extends StatelessWidget {
             title: '최근 본 상품',
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('최근 본 상품 화면으로 이동')));
+                MaterialPageRoute(
+                  builder: (context) => const RecentProductsScreen(),
+                ),
+              );
             },
           ),
           const Divider(height: 1),
@@ -78,9 +90,12 @@ class MenuScreen extends StatelessWidget {
             title: '관심목록',
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('관심목록 화면으로 이동')));
+                MaterialPageRoute(
+                  builder: (context) => const FavoriteProductsScreen(),
+                ),
+              );
             },
           ),
           const Divider(height: 1),
@@ -90,9 +105,10 @@ class MenuScreen extends StatelessWidget {
             title: '설정',
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('설정 화면으로 이동')));
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             },
           ),
           const Divider(height: 8, thickness: 8, color: Color(0xFFF5F5F5)),
@@ -102,9 +118,10 @@ class MenuScreen extends StatelessWidget {
             title: '공지사항',
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('공지사항 화면으로 이동')));
+                MaterialPageRoute(builder: (context) => const NoticeScreen()),
+              );
             },
           ),
           const Divider(height: 1),
@@ -213,10 +230,11 @@ class MenuScreen extends StatelessWidget {
                       return InkWell(
                         onTap: () {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${categories[index]['name']} 카테고리',
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CategoryProductsScreen(
+                                category: categories[index]['name'] as String,
                               ),
                             ),
                           );

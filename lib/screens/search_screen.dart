@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'search_result_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -28,6 +29,28 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  // 검색 실행 메서드
+  void _performSearch(String query) {
+    if (query.isEmpty) return;
+
+    // 최근 검색어에 추가
+    setState(() {
+      recentSearches.remove(query); // 중복 제거
+      recentSearches.insert(0, query);
+      if (recentSearches.length > 10) {
+        recentSearches.removeLast();
+      }
+    });
+
+    // 검색 결과 화면으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchResultScreen(searchQuery: query),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -50,20 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           style: TextStyle(color: isDark ? Colors.white : Colors.black),
           onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              setState(() {
-                if (!recentSearches.contains(value)) {
-                  recentSearches.insert(0, value);
-                  if (recentSearches.length > 10) {
-                    recentSearches.removeLast();
-                  }
-                }
-              });
-              // TODO: 검색 결과 화면으로 이동
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('"$value" 검색 결과')));
-            }
+            _performSearch(value);
           },
         ),
         actions: [
@@ -133,17 +143,22 @@ class _SearchScreenState extends State<SearchScreen> {
               spacing: 8,
               runSpacing: 8,
               children: recentSearches.map((search) {
-                return Chip(
-                  label: Text(search),
-                  deleteIcon: Icon(Icons.close, size: 16, color: iconColor),
-                  onDeleted: () {
-                    setState(() {
-                      recentSearches.remove(search);
-                    });
-                  },
-                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
-                  labelStyle: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
+                return GestureDetector(
+                  onTap: () => _performSearch(search),
+                  child: Chip(
+                    label: Text(search),
+                    deleteIcon: Icon(Icons.close, size: 16, color: iconColor),
+                    onDeleted: () {
+                      setState(() {
+                        recentSearches.remove(search);
+                      });
+                    },
+                    backgroundColor: isDark
+                        ? Colors.grey[800]
+                        : Colors.grey[100],
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
                 );
               }).toList(),
@@ -172,12 +187,7 @@ class _SearchScreenState extends State<SearchScreen> {
             final index = entry.key + 1;
             final search = entry.value;
             return InkWell(
-              onTap: () {
-                _searchController.text = search;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('"$search" 검색 결과')));
-              },
+              onTap: () => _performSearch(search),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(

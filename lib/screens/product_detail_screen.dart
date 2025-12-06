@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../data/chat_data.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
+import 'chat_detail_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -12,11 +15,117 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  bool isLiked = false;
+  late bool isLiked;
+
+  @override
+  void initState() {
+    super.initState();
+    // 상품의 관심상품 상태로 초기화
+    isLiked = widget.product.isFavorite;
+  }
+
+  // 같은 카테고리의 추천 상품 가져오기
+  List<Product> _getSimilarProducts() {
+    final currentCategory = widget.product.category;
+    if (currentCategory == null) return [];
+
+    return productList
+        .where(
+          (p) => p.category == currentCategory && p.id != widget.product.id,
+        )
+        .take(6)
+        .toList();
+  }
+
+  // 공유하기 기능
+  Future<void> _shareProduct() async {
+    final String shareText =
+        '''
+📦 ${widget.product.title}
+
+💰 ${widget.product.price}
+📍 ${widget.product.location}
+
+👤 판매자: ${widget.product.sellerName}
+
+🥕 규롯마켓에서 확인하세요!
+''';
+
+    try {
+      await Share.share(shareText, subject: widget.product.title);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('공유하기에 실패했습니다.')));
+      }
+    }
+  }
+
+  // 관심상품 토글
+  void _toggleFavorite() {
+    setState(() {
+      isLiked = !isLiked;
+      widget.product.isFavorite = isLiked;
+
+      if (isLiked) {
+        // 관심상품에 추가
+        if (!favoriteProducts.contains(widget.product)) {
+          favoriteProducts.add(widget.product);
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('관심목록에 추가되었습니다'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      } else {
+        // 관심상품에서 제거
+        favoriteProducts.remove(widget.product);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('관심목록에서 제거되었습니다'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    });
+  }
+
+  // 채팅 시작
+  void _startChat() {
+    // 내 상품이면 채팅 불가
+    if (widget.product.userId == currentUserId) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('내 상품에는 채팅할 수 없습니다.')));
+      return;
+    }
+
+    // 채팅방 가져오거나 생성
+    final chatRoom = getOrCreateChatRoom(widget.product);
+
+    // 채팅 상세 화면으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatDetailScreen(
+          chat: {
+            'id': chatRoom.id,
+            'name': chatRoom.recipientName,
+            'product': chatRoom.product.title,
+            'productId': chatRoom.product.id,
+            'chatRoom': chatRoom,
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final similarProducts = _getSimilarProducts();
 
     return Scaffold(
       body: CustomScrollView(
@@ -29,7 +138,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
+                  color: Colors.black.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -42,31 +151,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             actions: [
               IconButton(
-                onPressed: () {},
+                onPressed: _shareProduct,
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.home_outlined,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('공유하기')));
-                },
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: Colors.black.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
@@ -84,7 +173,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: Colors.black.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
@@ -112,14 +201,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ),
           ),
-          SliverToBoxAdapter(child: _buildProductInfo(isDark)),
+          SliverToBoxAdapter(child: _buildProductInfo(isDark, similarProducts)),
         ],
       ),
       bottomNavigationBar: _buildBottomBar(isDark),
     );
   }
 
-  Widget _buildProductInfo(bool isDark) {
+  Widget _buildProductInfo(bool isDark, List<Product> similarProducts) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -159,7 +248,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Row(
@@ -214,7 +303,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           // 조회수 및 관심
           Text(
-            '관심 ${widget.product.likes} · 조회 124',
+            '관심 ${widget.product.likes + (isLiked ? 1 : 0)} · 조회 124',
             style: TextStyle(fontSize: 13, color: Colors.grey[500]),
           ),
 
@@ -235,34 +324,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           const Divider(height: 32),
 
-          // 다른 상품 보기
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '판매자의 다른 상품',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black,
+          // 비슷한 상품 보기
+          if (similarProducts.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '이 카테고리의 다른 상품',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // 카테고리 전체 보기
+                    Get.snackbar('알림', '${widget.product.category} 카테고리 전체 보기');
+                  },
+                  child: const Text('더보기'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            SizedBox(
+              height: 170,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: similarProducts.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  return _buildSimilarProductItem(
+                    isDark,
+                    similarProducts[index],
+                  );
+                },
+              ),
+            ),
+          ] else ...[
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  '같은 카테고리의 다른 상품이 없습니다',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
                 ),
               ),
-              TextButton(onPressed: () {}, child: const Text('더보기')),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 150,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 4,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                return _buildOtherProductItem(isDark);
-              },
             ),
-          ),
+          ],
 
           const SizedBox(height: 80),
         ],
@@ -270,48 +380,60 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildOtherProductItem(bool isDark) {
-    return SizedBox(
-      width: 120,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              'https://picsum.photos/120',
-              width: 120,
-              height: 100,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 120,
-                  height: 100,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image),
-                );
-              },
-            ),
+  Widget _buildSimilarProductItem(bool isDark, Product product) {
+    return GestureDetector(
+      onTap: () {
+        // 해당 상품 상세페이지로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(product: product),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '다른 상품',
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white : Colors.black87,
+        );
+      },
+      child: SizedBox(
+        width: 130,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                product.imageUrl,
+                width: 130,
+                height: 110,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 130,
+                    height: 110,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image),
+                  );
+                },
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            '50,000원',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black,
+            const SizedBox(height: 8),
+            Text(
+              product.title,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              product.price,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -331,11 +453,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  isLiked = !isLiked;
-                });
-              },
+              onTap: _toggleFavorite,
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -382,9 +500,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('채팅하기 기능')));
+                _startChat();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6F0F),
@@ -471,7 +587,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   title: const Text('공유하기'),
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar('공유', '공유 기능이 실행됩니다');
+                    _shareProduct();
                   },
                 ),
                 ListTile(
@@ -573,6 +689,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             TextButton(
               onPressed: () {
+                // 실제로 productList에서 제거
+                productList.removeWhere((p) => p.id == widget.product.id);
                 Navigator.pop(context);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(

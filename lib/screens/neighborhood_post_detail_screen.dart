@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/neighborhood_data.dart';
 
 class NeighborhoodPostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -13,12 +14,40 @@ class NeighborhoodPostDetailScreen extends StatefulWidget {
 class _NeighborhoodPostDetailScreenState
     extends State<NeighborhoodPostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
-  bool isLiked = false;
+  NeighborhoodPost? _neighborhoodPost;
+
+  @override
+  void initState() {
+    super.initState();
+    _neighborhoodPost = widget.post['neighborhoodPost'] as NeighborhoodPost?;
+  }
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _toggleLike() {
+    if (_neighborhoodPost != null) {
+      setState(() {
+        toggleLike(_neighborhoodPost!);
+      });
+    }
+  }
+
+  void _addComment() {
+    if (_commentController.text.trim().isEmpty) return;
+
+    if (_neighborhoodPost != null) {
+      setState(() {
+        addComment(_neighborhoodPost!, _commentController.text, '나');
+      });
+      _commentController.clear();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('댓글이 등록되었습니다.')));
+    }
   }
 
   @override
@@ -29,6 +58,12 @@ class _NeighborhoodPostDetailScreenState
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    final isLiked = _neighborhoodPost?.isLiked ?? false;
+    final likes =
+        _neighborhoodPost?.likes ?? (widget.post['likes'] as int? ?? 0);
+    final comments = _neighborhoodPost?.comments ?? [];
+    final authorName = _neighborhoodPost?.authorName ?? '동네주민';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -68,9 +103,13 @@ class _NeighborhoodPostDetailScreenState
                           backgroundColor: isDark
                               ? Colors.grey[700]
                               : Colors.grey[200],
-                          child: Icon(
-                            Icons.person,
-                            color: isDark ? Colors.grey[400] : Colors.grey,
+                          child: Text(
+                            authorName.substring(0, 1),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white70 : Colors.grey[600],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -79,7 +118,7 @@ class _NeighborhoodPostDetailScreenState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '동네주민',
+                                authorName,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -87,7 +126,7 @@ class _NeighborhoodPostDetailScreenState
                                 ),
                               ),
                               Text(
-                                '${widget.post['location']} · ${widget.post['time']}',
+                                '${widget.post['location']} · ${_neighborhoodPost?.formattedTime ?? widget.post['time']}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: subTextColor,
@@ -135,7 +174,8 @@ class _NeighborhoodPostDetailScreenState
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          widget.post['content'] as String? ??
+                          _neighborhoodPost?.content ??
+                              widget.post['content'] as String? ??
                               '게시글 내용이 여기에 표시됩니다.',
                           style: TextStyle(
                             fontSize: 16,
@@ -157,11 +197,7 @@ class _NeighborhoodPostDetailScreenState
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              isLiked = !isLiked;
-                            });
-                          },
+                          onTap: _toggleLike,
                           child: Row(
                             children: [
                               Icon(
@@ -175,10 +211,12 @@ class _NeighborhoodPostDetailScreenState
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '공감 ${widget.post['likes']}',
+                                '공감 $likes',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: subTextColor,
+                                  color: isLiked
+                                      ? const Color(0xFFFF6F0F)
+                                      : subTextColor,
                                 ),
                               ),
                             ],
@@ -194,7 +232,7 @@ class _NeighborhoodPostDetailScreenState
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '댓글 ${widget.post['comments']}',
+                              '댓글 ${comments.length}',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: subTextColor,
@@ -220,7 +258,7 @@ class _NeighborhoodPostDetailScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '댓글',
+                          '댓글 ${comments.length}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -228,20 +266,26 @@ class _NeighborhoodPostDetailScreenState
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildComment(
-                          context,
-                          isDark,
-                          '이웃1',
-                          '좋은 정보 감사합니다!',
-                          '5분 전',
-                        ),
-                        _buildComment(
-                          context,
-                          isDark,
-                          '이웃2',
-                          '저도 궁금했어요~',
-                          '10분 전',
-                        ),
+                        if (comments.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Text(
+                                '첫 번째 댓글을 남겨보세요!',
+                                style: TextStyle(color: subTextColor),
+                              ),
+                            ),
+                          )
+                        else
+                          ...comments.map(
+                            (comment) => _buildComment(
+                              context,
+                              isDark,
+                              comment.authorName,
+                              comment.content,
+                              comment.formattedTime,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -291,17 +335,11 @@ class _NeighborhoodPostDetailScreenState
                       filled: true,
                       fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                     ),
+                    onSubmitted: (_) => _addComment(),
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
-                    if (_commentController.text.isNotEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('댓글이 등록되었습니다.')),
-                      );
-                      _commentController.clear();
-                    }
-                  },
+                  onPressed: _addComment,
                   icon: const Icon(Icons.send, color: Color(0xFFFF6F0F)),
                 ),
               ],
@@ -330,10 +368,13 @@ class _NeighborhoodPostDetailScreenState
           CircleAvatar(
             radius: 16,
             backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
-            child: Icon(
-              Icons.person,
-              size: 18,
-              color: isDark ? Colors.grey[400] : Colors.grey,
+            child: Text(
+              name.substring(0, 1),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              ),
             ),
           ),
           const SizedBox(width: 12),

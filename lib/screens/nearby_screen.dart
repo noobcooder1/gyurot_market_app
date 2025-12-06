@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../data/store_data.dart';
+import 'store_detail_screen.dart';
+import 'store_list_screen.dart';
+import 'search_screen.dart';
 
 class NearbyScreen extends StatelessWidget {
   const NearbyScreen({super.key});
@@ -27,9 +31,10 @@ class NearbyScreen extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              ScaffoldMessenger.of(
+              Navigator.push(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('검색 기능')));
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
             },
             icon: Icon(Icons.search, color: iconColor),
             tooltip: '검색',
@@ -63,23 +68,30 @@ class NearbyScreen extends StatelessWidget {
     Color cardColor,
   ) {
     final textColor = isDark ? Colors.white : Colors.black;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: cardColor,
-      child: Row(
-        children: [
-          Icon(Icons.location_on, size: 20, color: const Color(0xFFFF6F0F)),
-          const SizedBox(width: 8),
-          Text(
-            '아라동 근처',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: textColor,
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('위치 설정')));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        color: cardColor,
+        child: Row(
+          children: [
+            const Icon(Icons.location_on, size: 20, color: Color(0xFFFF6F0F)),
+            const SizedBox(width: 8),
+            Text(
+              '아라동 근처',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
-          ),
-          Icon(Icons.keyboard_arrow_down, size: 20, color: textColor),
-        ],
+            Icon(Icons.keyboard_arrow_down, size: 20, color: textColor),
+          ],
+        ),
       ),
     );
   }
@@ -91,16 +103,6 @@ class NearbyScreen extends StatelessWidget {
   ) {
     final textColor = isDark ? Colors.white : Colors.black;
     final iconBgColor = isDark ? Colors.grey[800] : Colors.grey[100];
-    final categories = [
-      {'icon': Icons.restaurant, 'name': '맛집'},
-      {'icon': Icons.local_cafe, 'name': '카페'},
-      {'icon': Icons.storefront, 'name': '편의점'},
-      {'icon': Icons.local_pharmacy, 'name': '약국'},
-      {'icon': Icons.local_hospital, 'name': '병원'},
-      {'icon': Icons.fitness_center, 'name': '헬스장'},
-      {'icon': Icons.school, 'name': '학원'},
-      {'icon': Icons.more_horiz, 'name': '더보기'},
-    ];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -114,12 +116,17 @@ class NearbyScreen extends StatelessWidget {
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),
-        itemCount: categories.length,
+        itemCount: storeCategories.length,
         itemBuilder: (context, index) {
+          final category = storeCategories[index];
           return InkWell(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${categories[index]['name']} 카테고리')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      StoreListScreen(category: category.name),
+                ),
               );
             },
             borderRadius: BorderRadius.circular(8),
@@ -134,14 +141,14 @@ class NearbyScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    categories[index]['icon'] as IconData,
+                    category.icon,
                     color: const Color(0xFFFF6F0F),
                     size: 24,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  categories[index]['name'] as String,
+                  category.name,
                   style: TextStyle(fontSize: 12, color: textColor),
                 ),
               ],
@@ -158,29 +165,7 @@ class NearbyScreen extends StatelessWidget {
     Color cardColor,
   ) {
     final textColor = isDark ? Colors.white : Colors.black;
-    final stores = [
-      {
-        'name': '맛있는 분식집',
-        'category': '분식',
-        'distance': '350m',
-        'rating': 4.8,
-        'reviews': 128,
-      },
-      {
-        'name': '동네 카페',
-        'category': '카페',
-        'distance': '500m',
-        'rating': 4.5,
-        'reviews': 89,
-      },
-      {
-        'name': '건강 약국',
-        'category': '약국',
-        'distance': '200m',
-        'rating': 4.9,
-        'reviews': 256,
-      },
-    ];
+    final popularStores = getPopularStores(limit: 5);
 
     return Container(
       color: cardColor,
@@ -189,26 +174,37 @@ class NearbyScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              '내 근처 인기 가게',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '내 근처 인기 가게',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('전체 인기 가게 보기')),
+                    );
+                  },
+                  child: const Text('더보기'),
+                ),
+              ],
             ),
           ),
-          ...stores.map((store) => _buildStoreItem(context, store, isDark)),
+          ...popularStores.map(
+            (store) => _buildStoreItem(context, store, isDark),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStoreItem(
-    BuildContext context,
-    Map<String, dynamic> store,
-    bool isDark,
-  ) {
+  Widget _buildStoreItem(BuildContext context, Store store, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey;
     final dividerColor = isDark ? Colors.grey[800] : const Color(0xFFE5E5E5);
@@ -216,9 +212,12 @@ class NearbyScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
+        Navigator.push(
           context,
-        ).showSnackBar(SnackBar(content: Text('${store['name']} 상세 페이지')));
+          MaterialPageRoute(
+            builder: (context) => StoreDetailScreen(store: store),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -242,7 +241,7 @@ class NearbyScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    store['name'],
+                    store.name,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -251,7 +250,7 @@ class NearbyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${store['category']} · ${store['distance']}',
+                    '${store.category} · ${store.distance}',
                     style: TextStyle(fontSize: 13, color: subTextColor),
                   ),
                   const SizedBox(height: 4),
@@ -264,7 +263,7 @@ class NearbyScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${store['rating']}',
+                        '${store.rating}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -273,7 +272,7 @@ class NearbyScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${store['reviews']})',
+                        '(${store.reviewCount})',
                         style: TextStyle(fontSize: 13, color: subTextColor),
                       ),
                     ],
@@ -281,6 +280,7 @@ class NearbyScreen extends StatelessWidget {
                 ],
               ),
             ),
+            Icon(Icons.chevron_right, color: subTextColor),
           ],
         ),
       ),

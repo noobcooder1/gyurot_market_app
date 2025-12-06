@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/repository.dart';
+import '../data/chat_data.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
@@ -13,19 +13,14 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final Repository _repository = Repository();
-  late List<Map<String, dynamic>> messages;
+  ChatRoom? _chatRoom;
 
   @override
   void initState() {
     super.initState();
-    messages = List.from(_repository.getMessages('user_0'));
-    if (messages.isEmpty) {
-      messages = [
-        {'isMe': false, 'text': '안녕하세요! 물건 아직 있나요?', 'time': '오후 2:00'},
-        {'isMe': true, 'text': '네, 아직 있습니다!', 'time': '오후 2:05'},
-        {'isMe': false, 'text': '가격 네고 가능할까요?', 'time': '오후 2:10'},
-      ];
+    // chat에 chatRoom이 있으면 사용, 없으면 기존 방식
+    if (widget.chat['chatRoom'] != null) {
+      _chatRoom = widget.chat['chatRoom'] as ChatRoom;
     }
   }
 
@@ -40,11 +35,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     if (_messageController.text.trim().isEmpty) return;
 
     setState(() {
-      messages.add({
-        'isMe': true,
-        'text': _messageController.text,
-        'time': '방금',
-      });
+      if (_chatRoom != null) {
+        // 전역 데이터에 메시지 추가
+        sendMessage(_chatRoom!, _messageController.text);
+      }
     });
     _messageController.clear();
 
@@ -58,6 +52,22 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
       }
     });
+
+    // 자동 응답 후 UI 갱신
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        setState(() {});
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -66,6 +76,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final iconColor = isDark ? Colors.white : Colors.black;
     final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5);
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
+    final messages = _chatRoom?.messages ?? [];
+    final productTitle = widget.chat['product'] as String? ?? '상품';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -78,11 +91,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.chat['name'] as String,
+              widget.chat['name'] as String? ?? '사용자',
               style: TextStyle(fontSize: 16, color: iconColor),
             ),
             Text(
-              widget.chat['product'] as String,
+              productTitle,
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ],
@@ -112,7 +125,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     color: isDark ? Colors.grey[800] : Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.image, color: Colors.grey[500]),
+                  child: _chatRoom?.product.imageUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            _chatRoom!.product.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.image, color: Colors.grey[500]),
+                          ),
+                        )
+                      : Icon(Icons.image, color: Colors.grey[500]),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -120,16 +143,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.chat['product'] as String,
+                        productTitle,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
-                      const Text(
-                        '거래 진행 중',
-                        style: TextStyle(
+                      Text(
+                        _chatRoom?.product.price ?? '가격 미정',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFFFF6F0F),
                         ),
@@ -160,15 +183,33 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
           // 메시지 목록
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                return _buildMessageBubble(message, isDark);
-              },
-            ),
+            child: messages.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '메시지를 보내 대화를 시작하세요!',
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      return _buildMessageBubble(message, isDark);
+                    },
+                  ),
           ),
 
           // 메시지 입력
@@ -230,8 +271,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
-  Widget _buildMessageBubble(Map<String, dynamic> message, bool isDark) {
-    final bool isMe = message['isMe'] as bool;
+  Widget _buildMessageBubble(ChatMessage message, bool isDark) {
+    final bool isMe = message.isMe;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -245,7 +286,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               radius: 16,
               backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
               child: Text(
-                widget.chat['name'].toString().substring(0, 1),
+                (widget.chat['name'] as String? ?? 'U').substring(0, 1),
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.white : Colors.grey[600],
@@ -258,7 +299,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 4),
               child: Text(
-                message['time'] as String,
+                message.formattedTime,
                 style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ),
@@ -279,14 +320,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),
               ],
             ),
             child: Text(
-              message['text'] as String,
+              message.text,
               style: TextStyle(
                 fontSize: 14,
                 color: isMe
@@ -299,7 +340,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 4),
               child: Text(
-                message['time'] as String,
+                message.formattedTime,
                 style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ),

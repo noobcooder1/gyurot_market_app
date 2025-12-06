@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import '../data/chat_data.dart';
 import 'chat_detail_screen.dart';
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -32,38 +38,8 @@ class ChatScreen extends StatelessWidget {
 
   Widget _buildChatList(BuildContext context, bool isDark) {
     final dividerColor = isDark ? Colors.grey[800] : Colors.grey[300];
-    final chats = [
-      {
-        'name': '김철수',
-        'lastMessage': '네, 내일 거래 가능합니다!',
-        'time': '오후 3:24',
-        'unread': 2,
-        'product': '아이폰 13 프로',
-      },
-      {
-        'name': '이영희',
-        'lastMessage': '감사합니다~ 좋은 하루 되세요!',
-        'time': '오전 11:30',
-        'unread': 0,
-        'product': '닌텐도 스위치',
-      },
-      {
-        'name': '박민수',
-        'lastMessage': '가격 조금 낮춰주실 수 있나요?',
-        'time': '어제',
-        'unread': 0,
-        'product': '자전거',
-      },
-      {
-        'name': '최수진',
-        'lastMessage': '어디서 만날까요?',
-        'time': '어제',
-        'unread': 1,
-        'product': '에어팟 프로',
-      },
-    ];
 
-    if (chats.isEmpty) {
+    if (chatRooms.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -81,36 +57,51 @@ class ChatScreen extends StatelessWidget {
                 color: isDark ? Colors.grey[400] : Colors.grey[500],
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              '상품 상세 페이지에서 채팅을 시작해보세요!',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+            ),
           ],
         ),
       );
     }
 
     return ListView.separated(
-      itemCount: chats.length,
+      itemCount: chatRooms.length,
       separatorBuilder: (context, index) =>
           Divider(height: 1, indent: 76, color: dividerColor),
       itemBuilder: (context, index) =>
-          _buildChatItem(context, chats[index], isDark),
+          _buildChatItem(context, chatRooms[index], isDark),
     );
   }
 
-  Widget _buildChatItem(
-    BuildContext context,
-    Map<String, dynamic> chat,
-    bool isDark,
-  ) {
+  Widget _buildChatItem(BuildContext context, ChatRoom chatRoom, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final avatarBgColor = isDark ? Colors.grey[700] : Colors.grey[200];
-    final imageBgColor = isDark ? Colors.grey[800] : Colors.grey[200];
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ChatDetailScreen(chat: chat)),
+          MaterialPageRoute(
+            builder: (context) => ChatDetailScreen(
+              chat: {
+                'id': chatRoom.id,
+                'name': chatRoom.recipientName,
+                'product': chatRoom.product.title,
+                'productId': chatRoom.product.id,
+                'chatRoom': chatRoom,
+              },
+            ),
+          ),
         );
+        // 돌아왔을 때 UI 갱신
+        setState(() {});
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -120,7 +111,7 @@ class ChatScreen extends StatelessWidget {
               radius: 28,
               backgroundColor: avatarBgColor,
               child: Text(
-                chat['name'].substring(0, 1),
+                chatRoom.recipientName.substring(0, 1),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -136,7 +127,7 @@ class ChatScreen extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        chat['name'],
+                        chatRoom.recipientName,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -145,14 +136,16 @@ class ChatScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        chat['time'],
+                        chatRoom.formattedTime,
                         style: TextStyle(fontSize: 12, color: subTextColor),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    chat['lastMessage'],
+                    chatRoom.lastMessage.isEmpty
+                        ? '새로운 채팅방이에요!'
+                        : chatRoom.lastMessage,
                     style: TextStyle(fontSize: 14, color: subTextColor),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -167,12 +160,20 @@ class ChatScreen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: imageBgColor,
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Icon(Icons.image, color: subTextColor),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      chatRoom.product.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.image, color: subTextColor),
+                    ),
+                  ),
                 ),
-                if (chat['unread'] > 0) ...[
+                if (chatRoom.unreadCount > 0) ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -184,7 +185,7 @@ class ChatScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${chat['unread']}',
+                      '${chatRoom.unreadCount}',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Colors.white,

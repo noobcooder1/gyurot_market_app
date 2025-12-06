@@ -121,13 +121,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ProductWriteScreen(),
                 ),
               );
+              // 글이 등록되었으면 화면 새로고침
+              if (result == true && mounted) {
+                setState(() {});
+              }
             },
             backgroundColor: const Color(0xFFFF6F0F),
             icon: const Icon(Icons.edit, color: Colors.white),

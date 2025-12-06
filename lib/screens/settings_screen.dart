@@ -199,6 +199,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       value: value,
       onChanged: onChanged,
       activeColor: const Color(0xFFFF6F0F),
+      activeTrackColor: const Color(0xFFFF6F0F).withValues(alpha: 0.5),
+      inactiveThumbColor: isDark ? Colors.grey[400] : Colors.grey[500],
+      inactiveTrackColor: isDark ? Colors.grey[700] : Colors.grey[300],
     );
   }
 

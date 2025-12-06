@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../src/common/theme_controller.dart';
 import 'product_write_screen.dart';
 import 'recent_products_screen.dart';
 import 'favorite_products_screen.dart';
@@ -15,156 +13,149 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconColor = isDark ? Colors.white : Colors.black;
-    final themeController = Get.find<ThemeController>();
+    final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final dividerColor = isDark
+        ? const Color(0xFF2A2A2A)
+        : const Color(0xFFF5F5F5);
 
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: Icon(Icons.arrow_back_ios_new, color: iconColor),
         ),
         title: const Text('메뉴'),
+        backgroundColor: cardColor,
+        foregroundColor: iconColor,
+        elevation: 0.5,
       ),
       body: ListView(
         children: [
-          // 다크모드 토글
-          Obx(
-            () => _buildMenuItem(
-              context: context,
-              icon: themeController.isDarkMode.value
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-              title: '다크모드',
-              trailing: Switch(
-                value: themeController.isDarkMode.value,
-                onChanged: (value) => themeController.setDarkMode(value),
-                activeColor: const Color(0xFFFF6F0F),
-              ),
-              onTap: () => themeController.toggleTheme(),
+          // 메뉴 섹션
+          _buildSectionHeader('메뉴', isDark),
+          Container(
+            color: cardColor,
+            child: Column(
+              children: [
+                _buildMenuTile(Icons.edit, '내 물건 팔기', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProductWriteScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.category_outlined, '카테고리', () {
+                  Navigator.pop(context);
+                  _showCategoryBottomSheet(context);
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.history, '최근 본 상품', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RecentProductsScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.favorite_border, '관심목록', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FavoriteProductsScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.settings_outlined, '설정', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                }, isDark),
+              ],
             ),
           ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.edit,
-            title: '내 물건 팔기',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProductWriteScreen(),
-                ),
-              );
-            },
+          Divider(height: 8, thickness: 8, color: dividerColor),
+
+          // 정보 섹션
+          _buildSectionHeader('정보', isDark),
+          Container(
+            color: cardColor,
+            child: Column(
+              children: [
+                _buildMenuTile(Icons.help_outline, '공지사항', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NoticeScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.info_outline, '앱 정보', () {
+                  Navigator.pop(context);
+                  _showAppInfoDialog(context);
+                }, isDark),
+              ],
+            ),
           ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.category_outlined,
-            title: '카테고리',
-            onTap: () {
-              Navigator.pop(context);
-              _showCategoryBottomSheet(context);
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.history,
-            title: '최근 본 상품',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RecentProductsScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.favorite_border,
-            title: '관심목록',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FavoriteProductsScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.settings_outlined,
-            title: '설정',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-          const Divider(height: 8, thickness: 8, color: Color(0xFFF5F5F5)),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.help_outline,
-            title: '공지사항',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NoticeScreen()),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            context: context,
-            icon: Icons.info_outline,
-            title: '앱 정보',
-            onTap: () {
-              Navigator.pop(context);
-              _showAppInfoDialog(context);
-            },
-          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    Widget? trailing,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildSectionHeader(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildMenuTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
     return ListTile(
-      leading: Icon(icon, color: isDark ? Colors.white70 : Colors.black87),
+      leading: Icon(icon, color: isDark ? Colors.white70 : Colors.black54),
       title: Text(
         title,
         style: TextStyle(
-          fontSize: 16,
-          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 15,
+          color: isDark ? Colors.white : Colors.black,
         ),
       ),
-      trailing:
-          trailing ??
-          Icon(
-            Icons.chevron_right,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: isDark ? Colors.grey[600] : Colors.grey[400],
+      ),
       onTap: onTap,
     );
+  }
+
+  Widget _buildDivider(Color color) {
+    return Divider(height: 1, indent: 16, endIndent: 16, color: color);
   }
 
   void _showCategoryBottomSheet(BuildContext context) {

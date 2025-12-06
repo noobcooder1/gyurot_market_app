@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/product.dart';
 
 class ProductWriteScreen extends StatefulWidget {
   const ProductWriteScreen({super.key});
@@ -415,6 +416,7 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
   }
 
   void _submitProduct() {
+    // 유효성 검사
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -434,10 +436,62 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
       return;
     }
 
-    // 상품 등록 완료
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('상품이 등록되었습니다!')));
-    Navigator.pop(context);
+    // 가격 포맷팅
+    String formattedPrice;
+    if (_priceController.text.isEmpty) {
+      formattedPrice = '가격 미정';
+    } else {
+      final priceValue = int.tryParse(
+        _priceController.text.replaceAll(',', ''),
+      );
+      if (priceValue != null) {
+        // 천단위 콤마 추가
+        formattedPrice = '${_formatNumber(priceValue)}원';
+      } else {
+        formattedPrice = '${_priceController.text}원';
+      }
+    }
+
+    // 고유 ID 생성 (타임스탬프 기반)
+    final newId = 'prod_${DateTime.now().millisecondsSinceEpoch}';
+
+    // 새 상품 생성
+    final newProduct = Product(
+      id: newId,
+      userId: currentUserId,
+      sellerName: '나', // 현재 사용자
+      title: _titleController.text,
+      location: '서울시 제주시 아라동', // 기본 위치 (실제 앱에서는 위치 설정에서 가져옴)
+      price: formattedPrice,
+      imageUrl: _images.isNotEmpty
+          ? 'https://picsum.photos/200?random=${DateTime.now().millisecondsSinceEpoch}'
+          : 'https://picsum.photos/200',
+      time: '방금 전',
+      likes: 0,
+      category: _selectedCategory,
+      description: _descriptionController.text,
+    );
+
+    // productList 맨 앞에 추가 (최신 글이 먼저 보이도록)
+    productList.insert(0, newProduct);
+
+    // 성공 메시지
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('상품이 등록되었습니다!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // 결과를 true로 반환하여 홈 화면이 새로고침되도록 함
+    Navigator.pop(context, true);
+  }
+
+  // 숫자 천단위 포맷팅
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
   }
 }

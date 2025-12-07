@@ -16,12 +16,20 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late bool isLiked;
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
     // 상품의 관심상품 상태로 초기화
     isLiked = widget.product.isFavorite;
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   // 같은 카테고리의 추천 상품 가져오기
@@ -122,6 +130,192 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
+  // 메인 이미지 표시 - 여러 장이면 슬라이드 + 화살표 버튼 + 인디케이터
+  Widget _buildMainImage() {
+    // 첨부 이미지(Uint8List)가 있으면 우선 사용
+    if (widget.product.images != null && widget.product.images!.isNotEmpty) {
+      return _buildImageSlider(
+        imageCount: widget.product.images!.length,
+        imageBuilder: (index) => Image.memory(
+          widget.product.images![index],
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackImage(),
+        ),
+        onTap: (index) => _openFullScreenViewer(
+          widget.product.images!,
+          index,
+          isNetwork: false,
+        ),
+      );
+    }
+
+    // 네트워크 이미지 URL 리스트가 있으면 사용
+    if (widget.product.imageUrls != null &&
+        widget.product.imageUrls!.isNotEmpty) {
+      return _buildImageSlider(
+        imageCount: widget.product.imageUrls!.length,
+        imageBuilder: (index) => Image.network(
+          widget.product.imageUrls![index],
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackImage(),
+        ),
+        onTap: (index) => _openFullScreenViewer(
+          widget.product.imageUrls!,
+          index,
+          isNetwork: true,
+        ),
+      );
+    }
+
+    // 단일 이미지 URL만 있으면 탭 시 전체화면
+    return GestureDetector(
+      onTap: () =>
+          _openFullScreenViewer([widget.product.imageUrl], 0, isNetwork: true),
+      child: Image.network(
+        widget.product.imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackImage(),
+      ),
+    );
+  }
+
+  // 이미지 슬라이더 공통 위젯
+  Widget _buildImageSlider({
+    required int imageCount,
+    required Widget Function(int index) imageBuilder,
+    required void Function(int index) onTap,
+  }) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: imageCount,
+          physics: const ClampingScrollPhysics(),
+          onPageChanged: (index) {
+            setState(() {
+              _currentImageIndex = index;
+            });
+          },
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () => onTap(index),
+              child: imageBuilder(index),
+            );
+          },
+        ),
+        // 좌측 화살표 버튼
+        if (imageCount > 1 && _currentImageIndex > 0)
+          Positioned(
+            left: 8,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                _pageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: Container(
+                width: 40,
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chevron_left,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        // 우측 화살표 버튼
+        if (imageCount > 1 && _currentImageIndex < imageCount - 1)
+          Positioned(
+            right: 8,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                _pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: Container(
+                width: 40,
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        // 페이지 인디케이터 (1 / 3)
+        if (imageCount > 1)
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_currentImageIndex + 1} / $imageCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 전체 화면 이미지 뷰어 열기
+  void _openFullScreenViewer(
+    List<dynamic> images,
+    int initialIndex, {
+    required bool isNetwork,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenImageViewer(
+          images: images,
+          initialIndex: initialIndex,
+          isNetwork: isNetwork,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackImage() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(child: Icon(Icons.image_not_supported, size: 64)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -188,16 +382,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Hero(
                 tag: widget.product.title,
-                child: Image.network(
-                  widget.product.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported, size: 64),
-                    );
-                  },
-                ),
+                child: _buildMainImage(),
               ),
             ),
           ),
@@ -702,6 +887,204 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+// 전체 화면 이미지 뷰어 위젯
+class FullScreenImageViewer extends StatefulWidget {
+  final List<dynamic> images;
+  final int initialIndex;
+  final bool isNetwork; // true: 네트워크 이미지 URL, false: Uint8List
+
+  const FullScreenImageViewer({
+    super.key,
+    required this.images,
+    required this.initialIndex,
+    this.isNetwork = false,
+  });
+
+  @override
+  State<FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildImage(int index) {
+    if (widget.isNetwork) {
+      return Image.network(
+        widget.images[index] as String,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(
+            Icons.image_not_supported,
+            color: Colors.white54,
+            size: 64,
+          );
+        },
+      );
+    } else {
+      return Image.memory(
+        widget.images[index],
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(
+            Icons.image_not_supported,
+            color: Colors.white54,
+            size: 64,
+          );
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 이미지 PageView
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(child: _buildImage(index)),
+              );
+            },
+          ),
+
+          // 닫기 버튼
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+
+          // 좌측 화살표 버튼
+          if (widget.images.length > 1 && _currentIndex > 0)
+            Positioned(
+              left: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 50,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 우측 화살표 버튼
+          if (widget.images.length > 1 &&
+              _currentIndex < widget.images.length - 1)
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 50,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 페이지 인디케이터 (점)
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 32,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.images.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentIndex == index ? 10 : 8,
+                    height: _currentIndex == index ? 10 : 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentIndex == index
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

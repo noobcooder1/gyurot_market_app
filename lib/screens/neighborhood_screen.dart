@@ -15,15 +15,7 @@ class NeighborhoodScreen extends StatefulWidget {
 class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   String? _selectedCategory;
 
-  final List<String> _categories = [
-    '동네질문',
-    '동네맛집',
-    '동네소식',
-    '취미생활',
-    '분실/실종',
-    '해주세요',
-    '일상',
-  ];
+  final List<String> _categories = ['동네정보', '취미 및 일상', '분실/실종', '일반'];
 
   @override
   Widget build(BuildContext context) {

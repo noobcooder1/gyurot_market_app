@@ -15,6 +15,8 @@ class _NeighborhoodPostDetailScreenState
     extends State<NeighborhoodPostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   NeighborhoodPost? _neighborhoodPost;
+  int _currentImageIndex = 0;
+  final PageController _imagePageController = PageController();
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _NeighborhoodPostDetailScreenState
   @override
   void dispose() {
     _commentController.dispose();
+    _imagePageController.dispose();
     super.dispose();
   }
 
@@ -48,6 +51,22 @@ class _NeighborhoodPostDetailScreenState
         context,
       ).showSnackBar(const SnackBar(content: Text('댓글이 등록되었습니다.')));
     }
+  }
+
+  // 전체 화면 이미지 뷰어 열기
+  void _openFullScreenViewer(int initialIndex) {
+    if (_neighborhoodPost?.images == null || _neighborhoodPost!.images!.isEmpty)
+      return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _NeighborhoodFullScreenImageViewer(
+          images: _neighborhoodPost!.images!,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
   }
 
   @override
@@ -183,6 +202,157 @@ class _NeighborhoodPostDetailScreenState
                             color: textColor,
                           ),
                         ),
+                        // 첨부 이미지 표시 - PageView 슬라이더 방식
+                        if (_neighborhoodPost?.images != null &&
+                            _neighborhoodPost!.images!.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              height: 300,
+                              child: Stack(
+                                children: [
+                                  // PageView 이미지 슬라이더
+                                  PageView.builder(
+                                    controller: _imagePageController,
+                                    itemCount:
+                                        _neighborhoodPost!.images!.length,
+                                    physics: const ClampingScrollPhysics(),
+                                    onPageChanged: (index) {
+                                      setState(() {
+                                        _currentImageIndex = index;
+                                      });
+                                    },
+                                    itemBuilder: (context, index) {
+                                      return GestureDetector(
+                                        onTap: () =>
+                                            _openFullScreenViewer(index),
+                                        child: Image.memory(
+                                          _neighborhoodPost!.images![index],
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Container(
+                                                  color: Colors.grey[300],
+                                                  child: const Center(
+                                                    child: Icon(
+                                                      Icons.image_not_supported,
+                                                      size: 48,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  // 좌측 화살표 버튼
+                                  if (_neighborhoodPost!.images!.length > 1 &&
+                                      _currentImageIndex > 0)
+                                    Positioned(
+                                      left: 8,
+                                      top: 0,
+                                      bottom: 0,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _imagePageController.previousPage(
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        },
+                                        child: Container(
+                                          width: 40,
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.chevron_left,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  // 우측 화살표 버튼
+                                  if (_neighborhoodPost!.images!.length > 1 &&
+                                      _currentImageIndex <
+                                          _neighborhoodPost!.images!.length - 1)
+                                    Positioned(
+                                      right: 8,
+                                      top: 0,
+                                      bottom: 0,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _imagePageController.nextPage(
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        },
+                                        child: Container(
+                                          width: 40,
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.chevron_right,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  // 페이지 인디케이터 (1 / 3)
+                                  if (_neighborhoodPost!.images!.length > 1)
+                                    Positioned(
+                                      bottom: 12,
+                                      right: 12,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '${_currentImageIndex + 1} / ${_neighborhoodPost!.images!.length}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -457,6 +627,187 @@ class _NeighborhoodPostDetailScreenState
           ),
         );
       },
+    );
+  }
+}
+
+// 동네생활 전용 전체 화면 이미지 뷰어 위젯
+class _NeighborhoodFullScreenImageViewer extends StatefulWidget {
+  final List<dynamic> images;
+  final int initialIndex;
+
+  const _NeighborhoodFullScreenImageViewer({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_NeighborhoodFullScreenImageViewer> createState() =>
+      _NeighborhoodFullScreenImageViewerState();
+}
+
+class _NeighborhoodFullScreenImageViewerState
+    extends State<_NeighborhoodFullScreenImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 이미지 PageView
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(
+                  child: Image.memory(
+                    widget.images[index],
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.white54,
+                        size: 64,
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // 닫기 버튼
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+
+          // 좌측 화살표 버튼
+          if (widget.images.length > 1 && _currentIndex > 0)
+            Positioned(
+              left: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 50,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 우측 화살표 버튼
+          if (widget.images.length > 1 &&
+              _currentIndex < widget.images.length - 1)
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 50,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 페이지 인디케이터 (점)
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 32,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.images.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentIndex == index ? 10 : 8,
+                    height: _currentIndex == index ? 10 : 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentIndex == index
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

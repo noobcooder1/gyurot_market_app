@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../data/neighborhood_data.dart';
 
 class NeighborhoodWriteScreen extends StatefulWidget {
@@ -13,18 +15,11 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   String? _selectedTopic;
-  final List<String> _images = [];
+  final List<Uint8List> _images = [];
   String? _selectedLocation;
+  final ImagePicker _picker = ImagePicker();
 
-  final List<String> _topics = [
-    '동네질문',
-    '동네맛집',
-    '동네소식',
-    '취미생활',
-    '분실/실종',
-    '해주세요',
-    '일상',
-  ];
+  final List<String> _topics = ['동네정보', '취미 및 일상', '분실/실종', '일반'];
 
   final List<String> _locations = ['아라동', '연동', '노형동', '이도동', '삼도동', '용담동'];
 
@@ -146,18 +141,26 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                color: isDark
-                                    ? Colors.grey[700]
-                                    : Colors.grey[300],
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image,
+                              child: Image.memory(
+                                entry.value,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
                                     color: isDark
-                                        ? Colors.grey[500]
-                                        : Colors.grey[600],
-                                  ),
-                                ),
+                                        ? Colors.grey[700]
+                                        : Colors.grey[300],
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.image,
+                                        color: isDark
+                                            ? Colors.grey[500]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             Positioned(
@@ -272,7 +275,7 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) {
+      builder: (dialogContext) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -300,31 +303,51 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
               ListTile(
                 leading: Icon(Icons.camera_alt, color: textColor),
                 title: Text('카메라로 촬영', style: TextStyle(color: textColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _images.add(
-                      'camera_${DateTime.now().millisecondsSinceEpoch}',
+                onTap: () async {
+                  Navigator.pop(dialogContext);
+                  try {
+                    final XFile? pickedFile = await _picker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 80,
                     );
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('카메라로 사진을 촬영했습니다. (데모)')),
-                  );
+                    if (pickedFile != null && mounted) {
+                      final bytes = await pickedFile.readAsBytes();
+                      setState(() {
+                        _images.add(bytes);
+                      });
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('카메라 오류: $e')));
+                    }
+                  }
                 },
               ),
               ListTile(
                 leading: Icon(Icons.photo_library, color: textColor),
                 title: Text('앨범에서 선택', style: TextStyle(color: textColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _images.add(
-                      'gallery_${DateTime.now().millisecondsSinceEpoch}',
+                onTap: () async {
+                  Navigator.pop(dialogContext);
+                  try {
+                    final XFile? pickedFile = await _picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 80,
                     );
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('앨범에서 사진을 선택했습니다. (데모)')),
-                  );
+                    if (pickedFile != null && mounted) {
+                      final bytes = await pickedFile.readAsBytes();
+                      setState(() {
+                        _images.add(bytes);
+                      });
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('앨범 오류: $e')));
+                    }
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -515,6 +538,7 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
       authorName: '나',
       location: _selectedLocation ?? '아라동',
       createdAt: DateTime.now(),
+      images: _images.isNotEmpty ? List<Uint8List>.from(_images) : null,
     );
 
     // 전역 리스트에 추가

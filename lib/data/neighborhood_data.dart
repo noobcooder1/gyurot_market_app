@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// 동네생활 게시글 데이터 모델
 class NeighborhoodPost {
   final String id;
@@ -7,6 +9,7 @@ class NeighborhoodPost {
   final String authorName;
   final String location;
   final DateTime createdAt;
+  final List<Uint8List>? images; // 첨부 이미지 바이트 데이터
   int likes;
   List<NeighborhoodComment> comments;
   bool isLiked;
@@ -19,6 +22,7 @@ class NeighborhoodPost {
     required this.authorName,
     required this.location,
     required this.createdAt,
+    this.images,
     this.likes = 0,
     List<NeighborhoodComment>? comments,
     this.isLiked = false,
@@ -66,7 +70,7 @@ class NeighborhoodComment {
 List<NeighborhoodPost> neighborhoodPosts = [
   NeighborhoodPost(
     id: 'post_001',
-    category: '동네질문',
+    category: '동네정보',
     title: '이 동네 맛집 추천해주세요!',
     content: '이사온지 얼마 안됐는데 맛집 추천 부탁드려요~\n특히 분식이나 한식 좋아해요!',
     authorName: '새이웃',
@@ -90,7 +94,7 @@ List<NeighborhoodPost> neighborhoodPosts = [
   ),
   NeighborhoodPost(
     id: 'post_002',
-    category: '동네소식',
+    category: '동네정보',
     title: '주말에 아라동 축제 한다고 하네요',
     content: '이번 주말에 동네 축제가 열린다고 합니다. 다들 오세요!\n아이들이랑 가기 좋을 것 같아요.',
     authorName: '축제좋아',
@@ -108,7 +112,7 @@ List<NeighborhoodPost> neighborhoodPosts = [
   ),
   NeighborhoodPost(
     id: 'post_003',
-    category: '취미생활',
+    category: '취미 및 일상',
     title: '같이 러닝하실 분 계신가요?',
     content: '매주 토요일 아침에 같이 러닝하실 분 구해요.\n초보도 환영합니다!',
     authorName: '러닝맨',
@@ -132,7 +136,7 @@ List<NeighborhoodPost> neighborhoodPosts = [
   ),
   NeighborhoodPost(
     id: 'post_004',
-    category: '동네맛집',
+    category: '동네정보',
     title: '아라동 새로 생긴 카페 다녀왔어요',
     content: '분위기도 좋고 커피도 맛있어요.\n디저트도 추천합니다!',
     authorName: '카페러버',

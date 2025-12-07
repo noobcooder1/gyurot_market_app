@@ -41,23 +41,7 @@ class ProductItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.0),
                 child: Hero(
                   tag: product.title,
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Image.network(
-                      product.imageUrl,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  child: AspectRatio(aspectRatio: 1, child: _buildThumbnail()),
                 ),
               ),
             ),
@@ -119,6 +103,36 @@ class ProductItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    // 첨부 이미지가 있으면 우선 표시
+    if (product.images != null && product.images!.isNotEmpty) {
+      return Image.memory(
+        product.images!.first,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackThumbnail();
+        },
+      );
+    }
+    // 첨부 이미지가 없으면 네트워크 이미지 사용
+    return Image.network(
+      product.imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildFallbackThumbnail();
+      },
+    );
+  }
+
+  Widget _buildFallbackThumbnail() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Icon(Icons.image_not_supported, color: Colors.grey),
     );
   }
 }

@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/product.dart';
 
 class ProductWriteScreen extends StatefulWidget {
@@ -14,7 +16,8 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   String? _selectedCategory;
   bool _isPriceNegotiable = false;
-  final List<String> _images = [];
+  final List<Uint8List> _images = [];
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _categories = [
     '디지털기기',
@@ -137,11 +140,19 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    color: Colors.grey[300],
-                                    child: const Center(
-                                      child: Icon(Icons.image),
-                                    ),
+                                  child: Image.memory(
+                                    entry.value,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey[300],
+                                        child: const Center(
+                                          child: Icon(Icons.image),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                                 Positioned(
@@ -318,19 +329,33 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
     );
   }
 
-  void _pickImage() {
+  Future<void> _pickImage() async {
     if (_images.length >= 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미지는 최대 10장까지 추가할 수 있습니다.')),
       );
       return;
     }
-    setState(() {
-      _images.add('image_${_images.length}');
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('이미지가 추가되었습니다 (데모)')));
+
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _images.add(bytes);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('이미지를 불러오는 중 오류가 발생했습니다: $e')));
+      }
+    }
   }
 
   void _showCategoryPicker(BuildContext context, bool isDark) {
@@ -470,6 +495,7 @@ class _ProductWriteScreenState extends State<ProductWriteScreen> {
       likes: 0,
       category: _selectedCategory,
       description: _descriptionController.text,
+      images: _images.isNotEmpty ? List<Uint8List>.from(_images) : null,
     );
 
     // productList 맨 앞에 추가 (최신 글이 먼저 보이도록)

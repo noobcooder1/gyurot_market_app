@@ -37,25 +37,7 @@ class ProductGridItem extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(8.0),
                 ),
-                child: Hero(
-                  tag: product.title,
-                  child: Image.network(
-                    product.imageUrl,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[300],
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                child: Hero(tag: product.title, child: _buildThumbnail()),
               ),
             ),
             // Details
@@ -116,6 +98,36 @@ class ProductGridItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    if (product.images != null && product.images!.isNotEmpty) {
+      return Image.memory(
+        product.images!.first,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackThumbnail();
+        },
+      );
+    }
+    return Image.network(
+      product.imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildFallbackThumbnail();
+      },
+    );
+  }
+
+  Widget _buildFallbackThumbnail() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(Icons.image_not_supported, color: Colors.grey),
       ),
     );
   }

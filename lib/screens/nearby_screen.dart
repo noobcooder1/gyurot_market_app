@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import '../data/store_data.dart';
 import 'store_detail_screen.dart';
 import 'store_list_screen.dart';
-import 'search_screen.dart';
+import 'nearby_search_screen.dart';
+import 'location_setting_screen.dart';
+import 'popular_stores_screen.dart';
 
-class NearbyScreen extends StatelessWidget {
+class NearbyScreen extends StatefulWidget {
   const NearbyScreen({super.key});
+
+  @override
+  State<NearbyScreen> createState() => _NearbyScreenState();
+}
+
+class _NearbyScreenState extends State<NearbyScreen> {
+  String _currentLocation = '아라동';
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +42,9 @@ class NearbyScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SearchScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const NearbySearchScreen(),
+                ),
               );
             },
             icon: Icon(Icons.search, color: iconColor),
@@ -69,10 +80,18 @@ class NearbyScreen extends StatelessWidget {
   ) {
     final textColor = isDark ? Colors.white : Colors.black;
     return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(
+      onTap: () async {
+        final result = await Navigator.push<String>(
           context,
-        ).showSnackBar(const SnackBar(content: Text('위치 설정')));
+          MaterialPageRoute(
+            builder: (context) => const LocationSettingScreen(),
+          ),
+        );
+        if (result != null && mounted) {
+          setState(() {
+            _currentLocation = result;
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -82,7 +101,7 @@ class NearbyScreen extends StatelessWidget {
             const Icon(Icons.location_on, size: 20, color: Color(0xFFFF6F0F)),
             const SizedBox(width: 8),
             Text(
-              '아라동 근처',
+              '$_currentLocation 근처',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -187,8 +206,11 @@ class NearbyScreen extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('전체 인기 가게 보기')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PopularStoresScreen(),
+                      ),
                     );
                   },
                   child: const Text('더보기'),

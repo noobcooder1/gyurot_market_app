@@ -16,7 +16,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this); // 숨김 탭 제거
   }
 
   @override
@@ -32,9 +32,9 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen>
     final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
-    // 내 상품만 필터
+    // 내가 직접 등록한 상품만 필터 (더미 데이터 제외, sellerName이 '나'인 것만)
     final myProducts = productList
-        .where((p) => p.userId == currentUserId)
+        .where((p) => p.userId == currentUserId && p.sellerName == '나')
         .toList();
 
     return Scaffold(
@@ -56,7 +56,6 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen>
           tabs: const [
             Tab(text: '판매중'),
             Tab(text: '거래완료'),
-            Tab(text: '숨김'),
           ],
         ),
       ),
@@ -65,7 +64,6 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen>
         children: [
           _buildProductList(myProducts, '판매 중인 상품이 없습니다', isDark),
           _buildProductList([], '거래 완료된 상품이 없습니다', isDark),
-          _buildProductList([], '숨긴 상품이 없습니다', isDark),
         ],
       ),
     );

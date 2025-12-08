@@ -4,7 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import '../data/neighborhood_data.dart';
 
 class NeighborhoodWriteScreen extends StatefulWidget {
-  const NeighborhoodWriteScreen({super.key});
+  final NeighborhoodPost? editPost; // 수정할 글 (null이면 신규 등록)
+
+  const NeighborhoodWriteScreen({super.key, this.editPost});
 
   @override
   State<NeighborhoodWriteScreen> createState() =>
@@ -19,9 +21,27 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
   String? _selectedLocation;
   final ImagePicker _picker = ImagePicker();
 
+  bool get _isEditMode => widget.editPost != null;
+
   final List<String> _topics = ['동네정보', '취미 및 일상', '분실/실종', '일반'];
 
   final List<String> _locations = ['아라동', '연동', '노형동', '이도동', '삼도동', '용담동'];
+
+  @override
+  void initState() {
+    super.initState();
+    // 수정 모드인 경우 기존 데이터로 초기화
+    if (widget.editPost != null) {
+      final post = widget.editPost!;
+      _titleController.text = post.title;
+      _contentController.text = post.content;
+      _selectedTopic = post.category;
+      _selectedLocation = post.location;
+      if (post.images != null) {
+        _images.addAll(post.images!);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -47,16 +67,19 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
           onPressed: () => Navigator.pop(context),
           icon: Icon(Icons.close, color: iconColor),
         ),
-        title: Text('동네생활 글쓰기', style: TextStyle(color: textColor)),
+        title: Text(
+          _isEditMode ? '게시글 수정' : '동네생활 글쓰기',
+          style: TextStyle(color: textColor),
+        ),
         backgroundColor: cardColor,
         foregroundColor: iconColor,
         elevation: 0.5,
         actions: [
           TextButton(
             onPressed: _submitPost,
-            child: const Text(
-              '완료',
-              style: TextStyle(
+            child: Text(
+              _isEditMode ? '수정' : '완료',
+              style: const TextStyle(
                 color: Color(0xFFFF6F0F),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -528,25 +551,48 @@ class _NeighborhoodWriteScreenState extends State<NeighborhoodWriteScreen> {
       ).showSnackBar(const SnackBar(content: Text('내용을 입력해주세요.')));
       return;
     }
-
-    // 새 게시글 생성
-    final newPost = NeighborhoodPost(
-      id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-      category: _selectedTopic!,
-      title: _titleController.text,
-      content: _contentController.text,
-      authorName: '나',
-      location: _selectedLocation ?? '아라동',
-      createdAt: DateTime.now(),
-      images: _images.isNotEmpty ? List<Uint8List>.from(_images) : null,
-    );
-
-    // 전역 리스트에 추가
-    addNeighborhoodPost(newPost);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('글이 등록되었습니다!')));
+    if (_isEditMode) {
+      // 수정 모드: 기존 글 업데이트
+      final index = neighborhoodPosts.indexWhere(
+        (p) => p.id == widget.editPost!.id,
+      );
+      if (index != -1) {
+        neighborhoodPosts[index] = NeighborhoodPost(
+          id: widget.editPost!.id,
+          category: _selectedTopic!,
+          title: _titleController.text,
+          content: _contentController.text,
+          authorName: widget.editPost!.authorName,
+          location: _selectedLocation ?? widget.editPost!.location,
+          createdAt: widget.editPost!.createdAt,
+          images: _images.isNotEmpty
+              ? List<Uint8List>.from(_images)
+              : widget.editPost!.images,
+          likes: widget.editPost!.likes,
+          comments: widget.editPost!.comments,
+          isLiked: widget.editPost!.isLiked,
+        );
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('게시글이 수정되었습니다!')));
+    } else {
+      // 신규 등록 모드
+      final newPost = NeighborhoodPost(
+        id: 'post_${DateTime.now().millisecondsSinceEpoch}',
+        category: _selectedTopic!,
+        title: _titleController.text,
+        content: _contentController.text,
+        authorName: '나',
+        location: _selectedLocation ?? '아라동',
+        createdAt: DateTime.now(),
+        images: _images.isNotEmpty ? List<Uint8List>.from(_images) : null,
+      );
+      addNeighborhoodPost(newPost);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('글이 등록되었습니다!')));
+    }
     Navigator.pop(context, true);
   }
 }

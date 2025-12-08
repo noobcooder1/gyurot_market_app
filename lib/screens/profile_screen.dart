@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 import '../models/user_profile.dart';
-import 'menu_screen.dart';
+import 'settings_screen.dart';
 import 'profile_edit_screen.dart';
 import 'sales_history_screen.dart';
 import 'purchase_history_screen.dart';
 import 'favorite_products_screen.dart';
 import 'faq_screen.dart';
+import 'my_neighborhood_posts_screen.dart';
+import 'my_comments_screen.dart';
+import 'manner_review_screen.dart';
+import 'customer_service_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -38,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const MenuScreen()),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
             icon: Icon(Icons.settings_outlined, color: iconColor),
@@ -85,17 +89,17 @@ class ProfileScreen extends StatelessWidget {
                 {
                   'icon': Icons.article_outlined,
                   'title': '동네생활 글',
-                  'action': 'neighborhood_posts',
+                  'screen': const MyNeighborhoodPostsScreen(),
                 },
                 {
                   'icon': Icons.comment_outlined,
                   'title': '동네생활 댓글',
-                  'action': 'comments',
+                  'screen': const MyCommentsScreen(),
                 },
                 {
                   'icon': Icons.star_border,
                   'title': '받은 매너 평가',
-                  'action': 'manner',
+                  'screen': const MannerReviewScreen(),
                 },
               ],
               isDark,
@@ -114,7 +118,7 @@ class ProfileScreen extends StatelessWidget {
                 {
                   'icon': Icons.headset_mic_outlined,
                   'title': '고객센터',
-                  'action': 'customer_service',
+                  'screen': const CustomerServiceScreen(),
                 },
                 {
                   'icon': Icons.info_outline,
@@ -155,9 +159,16 @@ class ProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: avatarBgColor,
-                    backgroundImage: profile.profileImage != null
-                        ? AssetImage(profile.profileImage!)
-                        : const AssetImage('assets/images/default_profile.png'),
+                    backgroundImage: profile.profileImageBytes != null
+                        ? MemoryImage(profile.profileImageBytes!)
+                        : null,
+                    child: profile.profileImageBytes == null
+                        ? Icon(
+                            Icons.person,
+                            size: 32,
+                            color: isDark ? Colors.grey[500] : Colors.grey[400],
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -284,6 +295,8 @@ class ProfileScreen extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => item['screen'] as Widget),
           );
+        } else if (item['action'] == 'app_info') {
+          _showAppInfoDialog(context);
         } else {
           // action 타입인 경우 스낵바 표시
           Get.snackbar('안내', '${item['title']} 기능을 준비 중입니다');
@@ -305,6 +318,34 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showAppInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('앱 정보'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('규롯마켓'),
+              SizedBox(height: 8),
+              Text('버전: 1.0.0'),
+              SizedBox(height: 8),
+              Text('© 2024 Gyurot Market'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

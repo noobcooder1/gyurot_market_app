@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
+import '../models/user_profile.dart';
 import '../data/chat_data.dart';
+import '../data/user_preferences.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'chat_detail_screen.dart';
+import 'product_write_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -24,6 +28,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.initState();
     // 상품의 관심상품 상태로 초기화
     isLiked = widget.product.isFavorite;
+
+    // 최근 본 상품에 추가 (중복 방지, 최대 20개)
+    _addToRecentlyViewed();
+  }
+
+  void _addToRecentlyViewed() {
+    // 이미 있으면 제거 후 맨 앞에 추가 (최신 순)
+    recentlyViewedProducts.removeWhere((p) => p.id == widget.product.id);
+    recentlyViewedProducts.insert(0, widget.product);
+
+    // 최대 20개까지만 유지
+    if (recentlyViewedProducts.length > 20) {
+      recentlyViewedProducts.removeLast();
+    }
   }
 
   @override
@@ -402,10 +420,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           // 판매자 정보
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.grey[200],
-                child: const Icon(Icons.person, color: Colors.grey),
+              Consumer<UserProfileProvider>(
+                builder: (context, profileProvider, child) {
+                  final isMyProduct = widget.product.userId == currentUserId;
+                  final profileImage = isMyProduct
+                      ? profileProvider.userProfile.profileImageBytes
+                      : widget.product.sellerProfileImage;
+                  final isDarkMode =
+                      Theme.of(context).brightness == Brightness.dark;
+
+                  return CircleAvatar(
+                    radius: 24,
+                    backgroundColor: isDarkMode
+                        ? Colors.grey[700]
+                        : Colors.grey[200],
+                    backgroundImage: profileImage != null
+                        ? MemoryImage(profileImage)
+                        : null,
+                    child: profileImage == null
+                        ? Icon(
+                            Icons.person,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                          )
+                        : null,
+                  );
+                },
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -738,7 +777,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   title: const Text('게시글 수정'),
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar('알림', '게시글 수정 화면으로 이동합니다');
+                    _showEditProductDialog();
                   },
                 ),
                 ListTile(
@@ -746,15 +785,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   title: const Text('끌어올리기'),
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar('완료', '게시글이 끌어올려졌습니다');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.visibility_off_outlined),
-                  title: const Text('숨기기'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Get.snackbar('완료', '게시글이 숨겨졌습니다');
+                    _bumpProduct();
                   },
                 ),
                 ListTile(
@@ -780,7 +811,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   title: const Text('이 판매자의 글 숨기기'),
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar('완료', '이 판매자의 게시글이 숨겨집니다');
+                    _showHideSellerConfirmDialog(context);
                   },
                 ),
                 ListTile(
@@ -801,6 +832,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         );
       },
     );
+  }
+
+  void _showEditProductDialog() async {
+    // ProductWriteScreen으로 이동하여 전체 화면에서 수정
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductWriteScreen(editProduct: widget.product),
+      ),
+    );
+
+    if (result == true) {
+      // 수정 후 상세 화면을 닫고 홈으로 돌아가서 새로고침
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    }
+  }
+
+  void _bumpProduct() {
+    final index = productList.indexWhere((p) => p.id == widget.product.id);
+    if (index != -1) {
+      final product = productList.removeAt(index);
+      productList.insert(0, product);
+    }
+    Get.snackbar('완료', '게시글이 끌어올려졌습니다');
   }
 
   void _showReportDialog(BuildContext context) {
@@ -848,7 +905,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   title: Text(reason),
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar('신고 접수', '신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+                    if (reason == '다른 문제가 있어요') {
+                      _showOtherReportDialog(context);
+                    } else {
+                      Get.snackbar(
+                        '신고 접수',
+                        '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                    }
                   },
                 ),
               ),
@@ -860,13 +925,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  void _showDeleteConfirmDialog(BuildContext context) {
+  void _showHideSellerConfirmDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('게시글 삭제'),
-          content: const Text('이 게시글을 삭제하시겠습니까?'),
+          title: const Text('판매자 숨기기'),
+          content: Text(
+            '${widget.product.sellerName}님의 모든 게시글을 숨기시겠습니까?\n\n설정 > 숨긴 판매자 관리에서 다시 해제할 수 있습니다.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -874,15 +941,95 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             TextButton(
               onPressed: () {
-                // 실제로 productList에서 제거
+                hideSeller(widget.product.userId, widget.product.sellerName);
+                Navigator.pop(context); // 다이얼로그 닫기
+                Navigator.pop(context, true); // 상세 화면 닫기 (결과 반환)
+                Get.snackbar(
+                  '완료',
+                  '${widget.product.sellerName}님의 게시글이 숨겨집니다',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+              child: const Text('숨기기', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOtherReportDialog(BuildContext context) {
+    final TextEditingController reportController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('신고 사유 입력'),
+          content: TextField(
+            controller: reportController,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: '다른 문제가 있다면 자세히 적어주세요.',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (reportController.text.trim().isNotEmpty) {
+                  Navigator.pop(context);
+                  Get.snackbar(
+                    '신고 접수',
+                    '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                } else {
+                  Get.snackbar(
+                    '알림',
+                    '신고 사유를 입력해주세요.',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              },
+              child: const Text('신고하기', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.black;
+
+        return AlertDialog(
+          backgroundColor: bgColor,
+          title: Text('게시글 삭제', style: TextStyle(color: textColor)),
+          content: Text('이 게시글을 삭제하시겠습니까?', style: TextStyle(color: textColor)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () {
                 productList.removeWhere((p) => p.id == widget.product.id);
                 Navigator.pop(context);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('게시글이 삭제되었습니다')));
+                Navigator.pop(context, true);
+                Get.snackbar('완료', '게시글이 삭제되었습니다');
               },
-              child: const Text('삭제', style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('삭제', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:get/get.dart';
 import '../data/neighborhood_data.dart';
+import 'neighborhood_write_screen.dart';
 
 class NeighborhoodPostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -581,6 +584,11 @@ class _NeighborhoodPostDetailScreenState
 
   void _showMoreOptions(BuildContext context, bool isDark) {
     final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    // 내 글인지 확인 (authorName이 '나'인 경우)
+    final authorName = _neighborhoodPost?.authorName ?? '동네주민';
+    final isMyPost = authorName == '나';
 
     showModalBottomSheet(
       context: context,
@@ -603,28 +611,261 @@ class _NeighborhoodPostDetailScreenState
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.share_outlined),
-                title: const Text('공유하기'),
+                leading: Icon(Icons.share_outlined, color: textColor),
+                title: Text('공유하기', style: TextStyle(color: textColor)),
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('공유하기')));
+                  _sharePost();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.report_outlined),
-                title: const Text('신고하기'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('신고하기')));
-                },
+              if (isMyPost) ...[
+                ListTile(
+                  leading: Icon(Icons.edit_outlined, color: textColor),
+                  title: Text('수정하기', style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _editPost();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outlined, color: Colors.red),
+                  title: const Text(
+                    '삭제하기',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deletePost(isDark);
+                  },
+                ),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(Icons.report_outlined, color: Colors.red),
+                  title: const Text(
+                    '신고하기',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showReportDialog(context, isDark);
+                  },
+                ),
+              ],
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _editPost() async {
+    if (_neighborhoodPost == null) return;
+
+    // NeighborhoodWriteScreen으로 이동하여 전체 화면에서 수정
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            NeighborhoodWriteScreen(editPost: _neighborhoodPost),
+      ),
+    );
+
+    if (result == true) {
+      // 수정 후 상세 화면을 닫고 목록으로 돌아가서 새로고침
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    }
+  }
+
+  void _deletePost(bool isDark) {
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: bgColor,
+        title: Text('게시글 삭제', style: TextStyle(color: textColor)),
+        content: Text(
+          '정말 이 게시글을 삭제하시겠습니까?',
+          style: TextStyle(color: textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_neighborhoodPost != null) {
+                neighborhoodPosts.removeWhere(
+                  (p) => p.id == _neighborhoodPost!.id,
+                );
+              }
+              Navigator.pop(context);
+              Navigator.pop(context);
+              Get.snackbar('완료', '게시글이 삭제되었습니다');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('삭제', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sharePost() async {
+    final title = widget.post['title'] as String;
+    final content = _neighborhoodPost?.content ?? '';
+    final location = widget.post['location'] as String? ?? '아라동';
+
+    final shareText =
+        '''
+📢 동네생활 게시글
+
+제목: $title
+
+$content
+
+📍 위치: $location
+🏠 당근마켓에서 확인하세요!
+''';
+
+    try {
+      await Share.share(shareText, subject: title);
+    } catch (e) {
+      Get.snackbar('오류', '공유하기에 실패했습니다.', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void _showReportDialog(BuildContext context, bool isDark) {
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    final reasons = [
+      '광고성 콘텐츠예요',
+      '부적절한 내용이에요',
+      '욕설/비방이 포함되어 있어요',
+      '개인정보가 노출되어 있어요',
+      '다른 문제가 있어요',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bgColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: double.infinity,
+                alignment: Alignment.center,
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '신고 사유를 선택해주세요',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              ...reasons.map(
+                (reason) => ListTile(
+                  title: Text(reason, style: TextStyle(color: textColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (reason == '다른 문제가 있어요') {
+                      _showOtherReportDialog(context, isDark);
+                    } else {
+                      Get.snackbar(
+                        '신고 접수',
+                        '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                    }
+                  },
+                ),
               ),
               const SizedBox(height: 8),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showOtherReportDialog(BuildContext context, bool isDark) {
+    final TextEditingController reportController = TextEditingController();
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: bgColor,
+          title: Text('신고 사유 입력', style: TextStyle(color: textColor)),
+          content: TextField(
+            controller: reportController,
+            maxLines: 4,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              hintText: '다른 문제가 있다면 자세히 적어주세요.',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+              border: const OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (reportController.text.trim().isNotEmpty) {
+                  Navigator.pop(context);
+                  Get.snackbar(
+                    '신고 접수',
+                    '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                } else {
+                  Get.snackbar(
+                    '알림',
+                    '신고 사유를 입력해주세요.',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              },
+              child: const Text('신고하기', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );

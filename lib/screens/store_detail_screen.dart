@@ -290,6 +290,201 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  // 가게 이미지 슬라이더
+  int _currentImageIndex = 0;
+  final PageController _imagePageController = PageController();
+
+  List<String> _getAllImageUrls() {
+    final List<String> allImageUrls = [];
+    if (_store.imageUrl != null) {
+      allImageUrls.add(_store.imageUrl!);
+    }
+    for (final url in _store.imageUrls) {
+      if (!allImageUrls.contains(url)) {
+        allImageUrls.add(url);
+      }
+    }
+    return allImageUrls;
+  }
+
+  Widget _buildImageSlider(bool isDark) {
+    final allImageUrls = _getAllImageUrls();
+
+    if (allImageUrls.isEmpty) {
+      return Container(
+        color: isDark ? Colors.grey[800] : Colors.grey[300],
+        child: Center(
+          child: Icon(
+            Icons.store,
+            size: 64,
+            color: isDark ? Colors.grey[600] : Colors.grey[500],
+          ),
+        ),
+      );
+    }
+
+    if (allImageUrls.length == 1) {
+      return GestureDetector(
+        onTap: () => _openFullScreenImage(allImageUrls, 0),
+        child: Image.network(
+          allImageUrls[0],
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: isDark ? Colors.grey[800] : Colors.grey[300],
+            child: Center(
+              child: Icon(
+                Icons.store,
+                size: 64,
+                color: isDark ? Colors.grey[600] : Colors.grey[500],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _imagePageController,
+          itemCount: allImageUrls.length,
+          onPageChanged: (index) {
+            setState(() {
+              _currentImageIndex = index;
+            });
+          },
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () => _openFullScreenImage(allImageUrls, index),
+              child: Image.network(
+                allImageUrls[index],
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  child: const Center(child: Icon(Icons.broken_image)),
+                ),
+              ),
+            );
+          },
+        ),
+        // 좌측 화살표 버튼
+        if (_currentImageIndex > 0)
+          Positioned(
+            left: 8,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                _imagePageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: Container(
+                width: 40,
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chevron_left,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        // 우측 화살표 버튼
+        if (_currentImageIndex < allImageUrls.length - 1)
+          Positioned(
+            right: 8,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                _imagePageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: Container(
+                width: 40,
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        // 페이지 인디케이터 (점)
+        Positioned(
+          bottom: 16,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              allImageUrls.length,
+              (index) => Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: index == _currentImageIndex
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // 사진 개수 표시
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '${_currentImageIndex + 1}/${allImageUrls.length}',
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 전체화면 이미지 뷰어
+  void _openFullScreenImage(List<String> imageUrls, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _FullScreenImageViewer(
+          imageUrls: imageUrls,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -323,16 +518,18 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
-                child: Center(
-                  child: Icon(
-                    Icons.store,
-                    size: 64,
-                    color: isDark ? Colors.grey[600] : Colors.grey[500],
-                  ),
-                ),
-              ),
+              background: _store.imageUrl != null || _store.imageUrls.isNotEmpty
+                  ? _buildImageSlider(isDark)
+                  : Container(
+                      color: isDark ? Colors.grey[800] : Colors.grey[300],
+                      child: Center(
+                        child: Icon(
+                          Icons.store,
+                          size: 64,
+                          color: isDark ? Colors.grey[600] : Colors.grey[500],
+                        ),
+                      ),
+                    ),
             ),
           ),
 
@@ -971,6 +1168,204 @@ class _ReviewImageViewerState extends State<_ReviewImageViewer> {
                       color: _currentIndex == index
                           ? Colors.white
                           : Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// 전체화면 이미지 뷰어 (가게 사진용)
+class _FullScreenImageViewer extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const _FullScreenImageViewer({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 이미지 PageView
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.imageUrls.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(
+                  child: Image.network(
+                    widget.imageUrls[index],
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                        size: 64,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // 닫기 버튼
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+
+          // 좌측 화살표 버튼
+          if (widget.imageUrls.length > 1 && _currentIndex > 0)
+            Positioned(
+              left: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 48,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 우측 화살표 버튼
+          if (widget.imageUrls.length > 1 &&
+              _currentIndex < widget.imageUrls.length - 1)
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 48,
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 사진 번호 표시
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+
+          // 페이지 인디케이터 (점)
+          if (widget.imageUrls.length > 1)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 32,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.imageUrls.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentIndex == index ? 10 : 8,
+                    height: _currentIndex == index ? 10 : 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentIndex == index
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.5),
                     ),
                   ),
                 ),

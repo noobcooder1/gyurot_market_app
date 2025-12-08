@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../src/common/theme_controller.dart';
+import 'hidden_sellers_screen.dart';
+import 'blocked_users_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
+import 'location_setting_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -106,15 +111,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 _buildMenuTile(Icons.location_on_outlined, '내 동네 설정', () {
-                  Get.snackbar('안내', '동네 설정 화면으로 이동합니다');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LocationSettingScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.visibility_off_outlined, '숨긴 판매자 관리', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HiddenSellersScreen(),
+                    ),
+                  );
+                }, isDark),
+                _buildDivider(dividerColor),
+                _buildMenuTile(Icons.block_outlined, '차단한 사용자 관리', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BlockedUsersScreen(),
+                    ),
+                  );
                 }, isDark),
                 _buildDivider(dividerColor),
                 _buildMenuTile(Icons.lock_outline, '개인정보 처리방침', () {
-                  Get.snackbar('안내', '개인정보 처리방침을 확인합니다');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPolicyScreen(),
+                    ),
+                  );
                 }, isDark),
                 _buildDivider(dividerColor),
                 _buildMenuTile(Icons.description_outlined, '이용약관', () {
-                  Get.snackbar('안내', '이용약관을 확인합니다');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TermsOfServiceScreen(),
+                    ),
+                  );
                 }, isDark),
               ],
             ),

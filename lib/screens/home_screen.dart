@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/user_preferences.dart';
 import '../models/product.dart';
 import '../widgets/product_item.dart';
 import '../widgets/product_grid_item.dart';
@@ -156,14 +157,39 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isDesktop,
     double horizontalPadding,
   ) {
+    // 추가 상품 초기화
+    initializeProducts();
+
+    // 현재 동네의 상품 필터링
+    final filteredProducts = getProductsByLocation(currentLocation);
+    final baseProducts = filteredProducts.isEmpty
+        ? productList
+        : filteredProducts;
+
+    // 숨긴 판매자와 차단한 사용자의 상품 제외
+    final displayProducts = baseProducts.where((product) {
+      // 숨긴 판매자의 상품인지 확인
+      if (isSellerHidden(product.userId)) {
+        return false;
+      }
+      // 차단한 사용자의 상품인지 확인
+      if (isUserBlocked(product.userId)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
     if (isMobile) {
       // 모바일 뷰: 리스트 형태
       return ListView.separated(
-        itemCount: productList.length,
+        itemCount: displayProducts.length,
         separatorBuilder: (context, index) =>
             const Divider(height: 1, color: Color(0xFFE5E5E5)),
         itemBuilder: (context, index) {
-          return ProductItem(product: productList[index]);
+          return ProductItem(
+            product: displayProducts[index],
+            onNeedRefresh: () => setState(() {}),
+          );
         },
       );
     } else {
@@ -190,9 +216,12 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisSpacing: spacing,
           mainAxisSpacing: spacing,
         ),
-        itemCount: productList.length,
+        itemCount: displayProducts.length,
         itemBuilder: (context, index) {
-          return ProductGridItem(product: productList[index]);
+          return ProductGridItem(
+            product: displayProducts[index],
+            onNeedRefresh: () => setState(() {}),
+          );
         },
       );
     }

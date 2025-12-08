@@ -4,8 +4,8 @@ import 'dart:typed_data';
 class NeighborhoodPost {
   final String id;
   final String category;
-  final String title;
-  final String content;
+  String title;
+  String content;
   final String authorName;
   final String location;
   final DateTime createdAt;
@@ -177,6 +177,25 @@ List<NeighborhoodPost> getPostsByCategory(String? category) {
   return neighborhoodPosts.where((post) => post.category == category).toList();
 }
 
+/// 동네별 게시글 필터링
+List<NeighborhoodPost> getPostsByLocation(String location) {
+  return neighborhoodPosts.where((post) => post.location == location).toList();
+}
+
+/// 동네 + 카테고리별 게시글 필터링
+List<NeighborhoodPost> getPostsByLocationAndCategory(
+  String location,
+  String? category,
+) {
+  var filtered = neighborhoodPosts
+      .where((p) => p.location == location)
+      .toList();
+  if (category != null && category.isNotEmpty) {
+    filtered = filtered.where((p) => p.category == category).toList();
+  }
+  return filtered;
+}
+
 /// 댓글 추가
 void addComment(NeighborhoodPost post, String content, String authorName) {
   final comment = NeighborhoodComment(
@@ -196,5 +215,81 @@ void toggleLike(NeighborhoodPost post) {
   } else {
     post.likes++;
     post.isLiked = true;
+  }
+}
+
+/// 다른 동네 게시글 초기화
+void initializeNeighborhoodPosts() {
+  final additionalPosts = [
+    // 도두동 게시글
+    NeighborhoodPost(
+      id: 'post_d01',
+      category: '동네정보',
+      title: '도두해변 일출 명소 추천해요',
+      content: '도두봉에서 일출 보시면 정말 예뻐요! 아침 산책하기 좋습니다.',
+      authorName: '도두러버',
+      location: '도두동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      likes: 15,
+    ),
+    NeighborhoodPost(
+      id: 'post_d02',
+      category: '취미 및 일상',
+      title: '도두봉 등산 같이 하실 분?',
+      content: '주말마다 도두봉 등산해요. 함께 하실 분 구합니다!',
+      authorName: '등산러',
+      location: '도두동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+      likes: 8,
+    ),
+    // 이호동 게시글
+    NeighborhoodPost(
+      id: 'post_i01',
+      category: '동네정보',
+      title: '이호테우해변 카페 추천',
+      content: '해변 근처에 새로 생긴 카페 분위기 좋아요. 커피도 맛있습니다!',
+      authorName: '이호주민',
+      location: '이호동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      likes: 20,
+    ),
+    NeighborhoodPost(
+      id: 'post_i02',
+      category: '취미 및 일상',
+      title: '이호해수욕장에서 서핑 배우실 분',
+      content: '초보자도 환영합니다. 주말에 같이 서핑해요!',
+      authorName: '서퍼',
+      location: '이호동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      likes: 12,
+    ),
+    // 내도동 게시글
+    NeighborhoodPost(
+      id: 'post_n01',
+      category: '동네정보',
+      title: '내도동 신규 맛집 오픈',
+      content: '새로 생긴 분식집 떡볶이가 진짜 맛있어요!',
+      authorName: '내도주민',
+      location: '내도동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+      likes: 18,
+    ),
+    // 외도동 게시글
+    NeighborhoodPost(
+      id: 'post_o01',
+      category: '동네정보',
+      title: '외도동 조용한 카페 추천',
+      content: '공부하기 좋은 조용한 카페 발견했어요. 커피도 가성비 좋아요!',
+      authorName: '외도러버',
+      location: '외도동',
+      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+      likes: 10,
+    ),
+  ];
+
+  for (final post in additionalPosts) {
+    if (!neighborhoodPosts.any((p) => p.id == post.id)) {
+      neighborhoodPosts.add(post);
+    }
   }
 }

@@ -184,7 +184,10 @@ class _NearbyScreenState extends State<NearbyScreen> {
     Color cardColor,
   ) {
     final textColor = isDark ? Colors.white : Colors.black;
-    final popularStores = getPopularStores(limit: 5);
+    final popularStores = getPopularStores(
+      limit: 5,
+      location: _currentLocation,
+    );
 
     return Container(
       color: cardColor,
@@ -255,7 +258,19 @@ class _NearbyScreenState extends State<NearbyScreen> {
                 color: iconBgColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.store, color: subTextColor),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: store.imageUrl != null
+                    ? Image.network(
+                        store.imageUrl!,
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.store, color: subTextColor),
+                      )
+                    : Icon(Icons.store, color: subTextColor),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

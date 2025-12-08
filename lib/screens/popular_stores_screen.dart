@@ -101,7 +101,7 @@ class PopularStoresScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // 가게 아이콘
+            // 가게 이미지
             Container(
               width: 64,
               height: 64,
@@ -109,10 +109,25 @@ class PopularStoresScreen extends StatelessWidget {
                 color: isDark ? Colors.grey[800] : Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.store,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
-                size: 28,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: store.imageUrl != null
+                    ? Image.network(
+                        store.imageUrl!,
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.store,
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          size: 28,
+                        ),
+                      )
+                    : Icon(
+                        Icons.store,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        size: 28,
+                      ),
               ),
             ),
             const SizedBox(width: 12),

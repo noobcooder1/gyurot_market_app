@@ -39,6 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildChatList(BuildContext context, bool isDark) {
     final dividerColor = isDark ? Colors.grey[800] : Colors.grey[300];
 
+    // 채팅방 목록 (차단 사용자 채팅방도 유지 - 법적 증거 보존)
     if (chatRooms.isEmpty) {
       return Center(
         child: Column(

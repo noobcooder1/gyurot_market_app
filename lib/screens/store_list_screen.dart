@@ -116,10 +116,25 @@ class StoreListScreen extends StatelessWidget {
                 color: isDark ? Colors.grey[800] : Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.store,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
-                size: 32,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: store.imageUrl != null
+                    ? Image.network(
+                        store.imageUrl!,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.store,
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          size: 32,
+                        ),
+                      )
+                    : Icon(
+                        Icons.store,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        size: 32,
+                      ),
               ),
             ),
             const SizedBox(width: 16),

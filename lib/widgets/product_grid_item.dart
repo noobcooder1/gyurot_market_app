@@ -4,21 +4,26 @@ import '../screens/product_detail_screen.dart';
 
 class ProductGridItem extends StatelessWidget {
   final Product product;
+  final VoidCallback? onNeedRefresh;
 
-  const ProductGridItem({super.key, required this.product});
+  const ProductGridItem({super.key, required this.product, this.onNeedRefresh});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => ProductDetailScreen(product: product),
           ),
         );
+        // 숨기기/차단 시 true 반환되면 갱신
+        if (result == true && onNeedRefresh != null) {
+          onNeedRefresh!();
+        }
       },
       child: Container(
         decoration: BoxDecoration(

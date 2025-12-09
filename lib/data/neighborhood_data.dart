@@ -46,12 +46,16 @@ class NeighborhoodComment {
   final String authorName;
   final String content;
   final DateTime createdAt;
+  final String? postId; // 댓글이 달린 게시글 ID
+  final String? postTitle; // 댓글이 달린 게시글 제목
 
   NeighborhoodComment({
     required this.id,
     required this.authorName,
     required this.content,
     required this.createdAt,
+    this.postId,
+    this.postTitle,
   });
 
   String get formattedTime {
@@ -65,6 +69,9 @@ class NeighborhoodComment {
     return '${diff.inDays}일 전';
   }
 }
+
+/// 현재 사용자가 작성한 댓글 목록 (전역)
+List<NeighborhoodComment> myNeighborhoodComments = [];
 
 /// 전역 동네생활 게시글 리스트
 List<NeighborhoodPost> neighborhoodPosts = [
@@ -203,8 +210,15 @@ void addComment(NeighborhoodPost post, String content, String authorName) {
     authorName: authorName,
     content: content,
     createdAt: DateTime.now(),
+    postId: post.id,
+    postTitle: post.title,
   );
   post.comments.add(comment);
+
+  // 현재 사용자가 작성한 댓글인 경우 추적 리스트에 추가
+  if (authorName == '나') {
+    myNeighborhoodComments.insert(0, comment);
+  }
 }
 
 /// 좋아요 토글

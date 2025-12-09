@@ -121,7 +121,7 @@ List<Product> productList = [
   // 스포츠/레저 (3개)
   Product(
     id: 'prod_003',
-    userId: 'user_001',
+    userId: 'user_bike', // 더미 데이터용 ID (현재 사용자와 다름)
     sellerName: '당근이',
     title: '자전거 팝니다',
     location: '아라동 345-67',

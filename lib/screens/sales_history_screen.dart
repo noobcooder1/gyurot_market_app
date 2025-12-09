@@ -32,9 +32,9 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen>
     final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
-    // 내가 직접 등록한 상품만 필터 (더미 데이터 제외, sellerName이 '나'인 것만)
+    // 내가 직접 등록한 상품만 필터 (현재 로그인된 사용자 ID로 판별)
     final myProducts = productList
-        .where((p) => p.userId == currentUserId && p.sellerName == '나')
+        .where((p) => p.userId == currentUserId)
         .toList();
 
     return Scaffold(

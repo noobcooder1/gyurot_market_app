@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import '../data/neighborhood_data.dart';
+import 'neighborhood_post_detail_screen.dart';
 
 /// 내가 작성한 동네생활 댓글 화면
-class MyCommentsScreen extends StatelessWidget {
+class MyCommentsScreen extends StatefulWidget {
   const MyCommentsScreen({super.key});
 
+  @override
+  State<MyCommentsScreen> createState() => _MyCommentsScreenState();
+}
+
+class _MyCommentsScreenState extends State<MyCommentsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -13,8 +20,8 @@ class MyCommentsScreen extends StatelessWidget {
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
-    // 더미 댓글 데이터 (실제 앱에서는 API에서 가져옴)
-    final myComments = <Map<String, dynamic>>[];
+    // 전역 리스트에서 내가 작성한 댓글 가져오기
+    final myComments = myNeighborhoodComments;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -65,22 +72,82 @@ class MyCommentsScreen extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final comment = myComments[index];
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  color: cardColor,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        comment['content'] as String? ?? '',
-                        style: TextStyle(fontSize: 14, color: textColor),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        comment['time'] as String? ?? '',
-                        style: TextStyle(fontSize: 12, color: subTextColor),
-                      ),
-                    ],
+                return InkWell(
+                  onTap: () {
+                    // 해당 게시글로 이동
+                    if (comment.postId != null) {
+                      final post = neighborhoodPosts.firstWhere(
+                        (p) => p.id == comment.postId,
+                        orElse: () => neighborhoodPosts.first,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NeighborhoodPostDetailScreen(
+                            post: {
+                              'neighborhoodPost': post,
+                              'title': post.title,
+                              'content': post.content,
+                              'category': post.category,
+                              'location': post.location,
+                              'time': post.formattedTime,
+                              'likes': post.likes,
+                            },
+                          ),
+                        ),
+                      ).then((_) {
+                        // 돌아왔을 때 화면 새로고침
+                        setState(() {});
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    color: cardColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 게시글 제목 표시
+                        if (comment.postTitle != null) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.article_outlined,
+                                size: 14,
+                                color: subTextColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  comment.postTitle!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: subTextColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        // 댓글 내용
+                        Text(
+                          comment.content,
+                          style: TextStyle(fontSize: 14, color: textColor),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        // 작성 시간
+                        Text(
+                          comment.formattedTime,
+                          style: TextStyle(fontSize: 12, color: subTextColor),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../data/chat_data.dart';
@@ -406,11 +407,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _pickImageFromGallery() async {
     try {
-      final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
       if (image != null) {
+        final bytes = await image.readAsBytes();
         setState(() {
           if (_chatRoom != null) {
-            sendMessage(_chatRoom!, '[이미지 전송]');
+            sendMessage(
+              _chatRoom!,
+              '',
+              type: MessageType.image,
+              imageData: bytes,
+            );
           }
         });
         Get.snackbar('완료', '이미지가 전송되었습니다');
@@ -422,11 +432,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _pickImageFromCamera() async {
     try {
-      final image = await _imagePicker.pickImage(source: ImageSource.camera);
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
       if (image != null) {
+        final bytes = await image.readAsBytes();
         setState(() {
           if (_chatRoom != null) {
-            sendMessage(_chatRoom!, '[사진 전송]');
+            sendMessage(
+              _chatRoom!,
+              '',
+              type: MessageType.image,
+              imageData: bytes,
+            );
           }
         });
         Get.snackbar('완료', '사진이 전송되었습니다');
@@ -746,6 +765,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildMessageBubble(ChatMessage message, bool isDark) {
     final bool isMe = message.isMe;
+
+    // 이미지 메시지인 경우
+    if (message.type == MessageType.image && message.imageData != null) {
+      return _buildImageMessageBubble(message, isDark);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -818,6 +843,133 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageMessageBubble(ChatMessage message, bool isDark) {
+    final bool isMe = message.isMe;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+              child: Text(
+                (widget.chat['name'] as String? ?? 'U').substring(0, 1),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white : Colors.grey[600],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          if (isMe)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Text(
+                message.formattedTime,
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              ),
+            ),
+          GestureDetector(
+            onTap: () => _showFullScreenImage(message.imageData!),
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.65,
+                maxHeight: 250,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(isMe ? 16 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 16),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(isMe ? 16 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 16),
+                ),
+                child: Image.memory(
+                  message.imageData!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 150,
+                      height: 150,
+                      color: isDark ? Colors.grey[800] : Colors.grey[200],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                            size: 40,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '이미지 로드 실패',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+          if (!isMe)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                message.formattedTime,
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showFullScreenImage(Uint8List imageData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.memory(imageData, fit: BoxFit.contain),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,13 @@
+import 'dart:typed_data';
 import '../models/product.dart';
+
+/// 채팅 메시지 타입
+enum MessageType {
+  text, // 일반 텍스트
+  image, // 이미지
+  appointment, // 약속
+  payment, // 결제 요청
+}
 
 /// 채팅방 데이터 모델
 class ChatRoom {
@@ -20,7 +29,14 @@ class ChatRoom {
     this.unreadCount = 0,
   });
 
-  String get lastMessage => messages.isNotEmpty ? messages.last.text : '';
+  String get lastMessage {
+    if (messages.isEmpty) return '';
+    final last = messages.last;
+    if (last.type == MessageType.image) return '[사진]';
+    if (last.type == MessageType.appointment) return '[약속]';
+    if (last.type == MessageType.payment) return '[결제 요청]';
+    return last.text;
+  }
 
   String get formattedTime {
     final now = DateTime.now();
@@ -40,12 +56,16 @@ class ChatMessage {
   final String text;
   final bool isMe;
   final DateTime time;
+  final MessageType type;
+  final Uint8List? imageData; // 이미지 바이트 데이터
 
   ChatMessage({
     required this.id,
     required this.text,
     required this.isMe,
     required this.time,
+    this.type = MessageType.text,
+    this.imageData,
   });
 
   String get formattedTime {
@@ -91,12 +111,19 @@ ChatRoom _createNewChatRoom(Product product) {
 }
 
 /// 메시지 전송
-void sendMessage(ChatRoom room, String text) {
+void sendMessage(
+  ChatRoom room,
+  String text, {
+  MessageType type = MessageType.text,
+  Uint8List? imageData,
+}) {
   final message = ChatMessage(
     id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
     text: text,
     isMe: true,
     time: DateTime.now(),
+    type: type,
+    imageData: imageData,
   );
   room.messages.add(message);
 
@@ -104,16 +131,18 @@ void sendMessage(ChatRoom room, String text) {
   chatRooms.remove(room);
   chatRooms.insert(0, room);
 
-  // 자동 응답 시뮬레이션 (1초 후)
-  Future.delayed(const Duration(seconds: 1), () {
-    final autoReply = ChatMessage(
-      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      text: _getAutoReply(),
-      isMe: false,
-      time: DateTime.now(),
-    );
-    room.messages.add(autoReply);
-  });
+  // 자동 응답 시뮬레이션 (1초 후) - 이미지가 아닌 경우에만
+  if (type == MessageType.text) {
+    Future.delayed(const Duration(seconds: 1), () {
+      final autoReply = ChatMessage(
+        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+        text: _getAutoReply(),
+        isMe: false,
+        time: DateTime.now(),
+      );
+      room.messages.add(autoReply);
+    });
+  }
 }
 
 /// 자동 응답 메시지
